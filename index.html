@@ -400,11 +400,11 @@ function applyLang(){ var i=lang==='cn'?0:1;
 
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function refreshChips(){
-  document.getElementById('fileCount').textContent=parsedFiles.length;
-  document.getElementById('dbCount').textContent=Object.keys(window._DB||{}).length;
   var fc=document.querySelector('[data-i18n-html="filechip"]'), dc=document.querySelector('[data-i18n-html="dbchip"]');
-  if(lang==='cn'){ fc.innerHTML='已载入 <b id="fileCount">'+parsedFiles.length+'</b> 个文件'; dc.innerHTML='订单总库 <b id="dbCount">'+Object.keys(window._DB||{}).length+'</b> 笔'; }
-  else { fc.innerHTML='<b>'+parsedFiles.length+'</b> files'; dc.innerHTML='Order DB <b>'+Object.keys(window._DB||{}).length+'</b>'; }
+  if(!fc||!dc)return;
+  var nf=parsedFiles.length, nd=Object.keys(window._DB||{}).length;
+  if(lang==='cn'){ fc.innerHTML='已载入 <b>'+nf+'</b> 个文件'; dc.innerHTML='订单总库 <b>'+nd+'</b> 笔'; }
+  else { fc.innerHTML='<b>'+nf+'</b> files'; dc.innerHTML='Order DB <b>'+nd+'</b>'; }
 }
 
 /*==== excel read ====*/
