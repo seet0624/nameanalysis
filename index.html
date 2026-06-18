@@ -77,6 +77,14 @@
   .pop .read:hover{border-color:var(--gold)}
   .pop .play{background:var(--gold);color:#241c0a;border:none;border-radius:8px;padding:3px 9px;cursor:pointer;font-weight:600}
   .empty{color:var(--muted);text-align:center;padding:40px}
+  .unresbox{background:var(--badbg);border:1px solid var(--bad);border-radius:12px;padding:14px 16px;margin:6px 0 16px}
+  .unresbox .uhead{color:var(--bad);font-weight:600;margin-bottom:10px;font-size:13px}
+  .urow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:7px 0}
+  .urow .onum{font-weight:600;color:var(--ink);font-size:13px;min-width:160px}
+  .urow .who{color:var(--muted);font-size:12px;min-width:130px}
+  .urow .oinput{flex:1;min-width:220px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-family:inherit;font-size:13px}
+  .urow .oinput:focus{border-color:var(--gold);outline:none}
+  .unresbox .btn{margin-top:10px}
   .foot{color:var(--muted);font-size:12px;margin-top:30px;text-align:center}
   a{color:var(--gold)}
 </style>
@@ -249,14 +257,14 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
     var av=avoidChars(notesAll); for(var ac in av)tb.single[norm(ac)]=1;
     (RULES._extraTaboo||[]).forEach(function(c){ if(c)tb.single[norm(c)]=1; });
     // 订单号
-    var orderProblems=[]; var ownSet={}; if(grp._order)ownSet[grp._order.toUpperCase()]=1;
+    var orderProblems=[], unresolvedOrders=[]; var ownSet={}; if(grp._order)ownSet[grp._order.toUpperCase()]=1;
     rows.forEach(function(ri){ orderCols.forEach(function(ci){ (String(data[ri][ci]==null?'':data[ri][ci]).match(ORDER_RE)||[]).forEach(function(o){ownSet[o.toUpperCase()]=1;}); }); });
     if(RULES.checkOrder){ var scanText=''; rows.forEach(function(ri){ data[ri].forEach(function(cell){scanText+=' '+String(cell==null?'':cell);}); }); var seen={};
       (scanText.match(ORDER_RE)||[]).forEach(function(num){ var key=num.toUpperCase(); if(ownSet[key]||seen[key])return; seen[key]=1;
         var rel=orderIndex[key];
         if(rel)rel._givens.forEach(function(gn){if(gn)fam.push(['关联学员「'+rel._disp+'」('+num+')',gn,false,true]);});
         else if(orderDB&&orderDB[key])orderDB[key].forEach(function(fn){fam.push(['关联订单 '+num+' 的新名',fn]);});
-        else orderProblems.push('家人栏/备注有名正言顺订单号「'+num+'」——那位也是客户、新名可能还没定。请先查这个订单的状态和新名再决定（也可加进订单总库自动比对）'); }); }
+        else { unresolvedOrders.push(num); orderProblems.push('家人栏/备注有名正言顺订单号「'+num+'」——还查不到它的新名。请在下方输入它的新名后自动重查（那位也是客户、可能还没定名）'); } }); }
     var needEyes=noteNeedsEyes(notesAll);
 
     function fg(p){ var n=p[1]; if(p[3])return n; if(n.length>=3&&COMPOUND[n.slice(0,2)])return n.slice(2); if(n.length>=2&&isSurname(n[0]))return n.slice(1); return n; }
@@ -281,7 +289,7 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
     var problem=rowData.some(function(rd){return rd.msgs.length>0;});
     if(needEyes)rowData.forEach(function(rd){rd.warns.push('【备注提到 朋友/避免/同名，可能有别姓的人要避开，请人工看】');});
     personNotes.forEach(function(n){rowData.forEach(function(rd){rd.warns.push(n);});});
-    results.push({sid:grp.sid,disp:grp._disp,order:grp._order,rows:rowData,problem:problem,verdict:problem?'有问题':'通过'});
+    results.push({sid:grp.sid,disp:grp._disp,order:grp._order,rows:rowData,problem:problem,verdict:problem?'有问题':'通过',unresolvedOrders:unresolvedOrders});
   }
   return {hr:pf.hr,header:pf.header,cols:cols,results:results}; }
 
@@ -374,6 +382,16 @@ function renderActive(){
   var sum='<div class="summary"><span class="big">'+esc(x.name)+'</span>'+
     '<span>共 '+res.length+' 位学员</span>'+
     '<span class="pill '+(nbad?'bad':'ok')+'">'+(nbad?nbad+' 位有问题':'全部通过')+'</span></div>';
+  // 待补新名的订单（查不到的）
+  var unres={}; res.forEach(function(r){ (r.unresolvedOrders||[]).forEach(function(num){ var k=num.toUpperCase(); (unres[k]||(unres[k]=[])).push(r.disp||('序'+r.sid)); }); });
+  var unresKeys=Object.keys(unres);
+  if(unresKeys.length){
+    var rowsU=unresKeys.map(function(k){ return '<div class="urow"><span class="onum">订单 '+esc(k)+'</span>'+
+      '<span class="who">被 '+esc(unres[k].join('、'))+' 引用</span>'+
+      '<input class="oinput" data-num="'+esc(k)+'" placeholder="输入它的新名（两个就用逗号分开，例：陈志强,陈志明）"></div>'; }).join('');
+    sum+='<div class="unresbox"><div class="uhead">⚠ 这些订单号查不到新名 — 输入后自动重查撞字/撞音：</div>'+rowsU+
+      '<button class="btn" id="applyOrders">加入并重新检查</button></div>';
+  }
   var rows='';
   res.forEach(function(r){
     r.rows.forEach(function(rw,idx){
@@ -403,6 +421,14 @@ function renderActive(){
   };});
   // hanzi click
   sec.querySelectorAll('.han').forEach(function(el){ el.onclick=function(ev){ showPop(ev, el.getAttribute('data-ch')); }; });
+  // 输入订单新名 → 加入总库并重查
+  var applyBtn=sec.querySelector('#applyOrders');
+  if(applyBtn)applyBtn.onclick=function(){
+    var any=false;
+    sec.querySelectorAll('.oinput').forEach(function(inp){ var num=inp.getAttribute('data-num'); var v=inp.value.trim();
+      if(v){ var names=v.split(/[\s,，、;；]+/).filter(Boolean); if(names.length){ importedDB[num]=(importedDB[num]||[]).concat(names); any=true; } } });
+    if(any) rebuild(); else alert('请先在输入框填上订单的新名。');
+  };
 }
 
 /* character popover: readings + simp/trad + 听发音 */
@@ -462,7 +488,7 @@ async function downloadSplit(keepProblem){
 }
 // 重新取原始 buffer（exceljs 载入会改动，所以每次重读）
 var bufCache={};
-async function refreshBuffer(x){ return x._buf.slice(0); }
+async function refreshBuffer(x){ return x._buf; }
 
 /*==== order DB import/export ====*/
 function expDB(){
