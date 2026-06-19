@@ -306,7 +306,15 @@ function simpOf(ch){ return T2S[ch]||ch; }
 
 var NOISE=['兄弟姐妹','伴侣','姐姐','弟弟','妹妹','哥哥','大姐','大哥','二哥','三哥','三姐','大嫂','已故','已名正言顺','还没名正言顺','原名','现用名','曾用名','现用','曾用','改名为','改名','已改名','离婚','離婚','已离婚','已離婚','再婚','过继的','过继','過繼的','過繼','领养的','领养','領養的','領養','抱养的','抱养','收养的','收养','继子','继女','现在用','现用此名','儿子','女儿','现在用'];
 var NULLS={'无':1,'無':1,'-':1,'NA':1,'na':1,'None':1,'':1};
-function splitNames(text){ var t=String(text==null?'':text); if(NULLS[t.trim()])return []; t=t.replace(/[（(][^）)]*[）)]/g,''); for(var i=0;i<NOISE.length;i++)t=t.split(NOISE[i]).join(''); var parts=t.split(/[@，,、；;：:　\s\/]+/),out=[]; for(var j=0;j<parts.length;j++){var c=cjkOnly(parts[j]);if(c&&!NULLS[c])out.push(c);} return out; }
+var REL_MOD='大小二三四五六七八九十老長长幼次親亲堂表繼继養养前現现阿細细家干契外';
+var REL_ROOT='哥弟姐妹兄姊爸媽妈父母爹娘夫妻公婆爺爷奶兒儿嫂嬸婶佬孫孙伯叔姑舅姨侄甥媳婿';
+var REL_FULL={'伴侣':1,'伴侶':1,'配偶':1,'太太':1,'先生':1,'丈夫':1,'男友':1,'女友':1,'男朋友':1,'女朋友':1,'未婚夫':1,'未婚妻':1,'前夫':1,'前妻':1,'老婆':1,'老公':1,'妻子':1,'嫂子':1,'女婿':1,'媳妇':1,'媳婦':1,'本人':1,'自己':1,'儿子':1,'兒子':1,'女儿':1,'女兒':1,'长子':1,'長子':1,'次子':1,'幼子':1,'长女':1,'長女':1,'次女':1,'幼女':1,'独子':1,'獨子':1,'独女':1,'獨女':1,'大儿子':1,'小儿子':1,'二儿子':1,'大女儿':1,'小女儿':1,'二女儿':1,'孙子':1,'孫子':1,'孙女':1,'孫女':1,'外孙':1,'外孫':1,'外孙女':1,'外孫女':1,'长孙':1,'長孫':1,'侄子':1,'侄女':1,'外甥':1,'外甥女':1,'养子':1,'養子':1,'养女':1,'養女':1,'继子':1,'繼子':1,'继女':1,'繼女':1,'双胞胎':1,'雙胞胎':1,'龙凤胎':1,'龍鳳胎':1};
+var REL_RE=new RegExp('^['+REL_MOD+']*['+REL_ROOT+']+');
+function stripRel(t){ if(REL_FULL[t])return ''; var arr=Array.from(t);
+  if(arr.length>=2&&arr.every(function(c){return (REL_MOD+REL_ROOT).indexOf(c)>=0;}))return '';
+  var m=t.match(REL_RE); if(m&&m[0].length<t.length){ var rest=t.slice(m[0].length); if(Array.from(rest).length>=2)return rest; }
+  return t; }
+function splitNames(text){ var t=String(text==null?'':text); if(NULLS[t.trim()])return []; t=t.replace(/[（(][^）)]*[）)]/g,''); for(var i=0;i<NOISE.length;i++)t=t.split(NOISE[i]).join(''); var parts=t.split(/[@，,、；;：:　\s\/]+/),out=[]; for(var j=0;j<parts.length;j++){var c=cjkOnly(parts[j]);if(!c||NULLS[c])continue; c=stripRel(c); if(c&&!NULLS[c]&&Array.from(c).length>=2)out.push(c);} return out; }
 function familyMembers(row, cols){ var out=[];
   splitNames(row[cols.father]).forEach(function(n){out.push(['父亲',n]);});
   splitNames(row[cols.mother]).forEach(function(n){out.push(['母亲',n]);});
