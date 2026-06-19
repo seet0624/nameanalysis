@@ -156,8 +156,9 @@
   .scard .sid{color:var(--muted);font-size:12px}
   .scard .who{font-weight:600}
   .scard .sp{flex:1}
-  .scard .names{display:flex;gap:18px;flex-wrap:wrap;margin:8px 0}
-  .nblk{display:flex;flex-direction:column;gap:2px}
+  .scard .names{display:flex;flex-direction:column;gap:0;margin:8px 0}
+  .nblk{display:flex;flex-direction:column;gap:3px;padding:9px 0}
+.nblk+.nblk{border-top:1px solid var(--line)}
   .nblk .nmrow{display:flex;align-items:center;gap:7px}
   .nspk{background:var(--chip);border:1px solid var(--line);border-radius:7px;cursor:pointer;font-size:12px;padding:1px 7px;color:var(--muted)}
   .nspk:hover{border-color:var(--gold);color:var(--gold)}
@@ -598,7 +599,15 @@ function changeVerdict(sid,val){ var x=parsedFiles[activeFile]; var r=x.audit.re
   r.verdict=val; r.problem=(val==='有问题'); saveVerdicts(); renderActive(); renderTabs(); renderDashboard(); }
 
 /*==== popover ====*/
-function speak(text){ try{ var u=new SpeechSynthesisUtterance(text); u.lang='zh-CN'; u.rate=.8; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+var _voices=[];
+function loadVoices(){ try{ _voices=window.speechSynthesis.getVoices()||[]; }catch(e){} }
+if(typeof window!=='undefined'&&'speechSynthesis'in window){ loadVoices(); try{ window.speechSynthesis.onvoiceschanged=loadVoices; }catch(e){} }
+function speak(text){ try{ if(!('speechSynthesis'in window)||!text)return; var ss=window.speechSynthesis; ss.cancel(); ss.resume();
+  if(!_voices.length)loadVoices();
+  var u=new SpeechSynthesisUtterance(String(text)); u.lang='zh-CN'; u.rate=0.85;
+  var zh=_voices.filter(function(v){return /^zh|zh[-_]|cmn|chinese/i.test(v.lang+' '+v.name);})[0]; if(zh)u.voice=zh;
+  setTimeout(function(){ try{ ss.speak(u); }catch(e){} }, 60);
+}catch(e){} }
 function showPop(ev,ch){ var pop=document.getElementById('pop'); var reads=readingsOf(ch); var trad=tradOf(ch),simp=simpOf(ch);
   var diff=trad!==ch?('繁体：<b style="color:var(--gold)">'+esc(trad)+'</b>'):(simp!==ch?('简体：<b style="color:var(--gold)">'+esc(simp)+'</b>'):'简繁相同');
   var rd=reads.length?reads.map(function(r){ var ex=exampleWord(ch,r); return '<span class="read" data-say="'+esc(ex||ch)+'">'+esc(r)+(ex?'（'+esc(ex)+'）':'')+'</span>'; }).join(' '):'<span style="color:var(--muted)">查无读音</span>';
