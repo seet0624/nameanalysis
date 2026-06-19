@@ -86,19 +86,18 @@
   .dcell .dval{color:var(--ink);font-size:13px;line-height:1.55;word-break:break-word;white-space:pre-wrap}
   .dcell.hot{border-color:var(--bad);background:var(--badbg)}
   .dcell.hot .dlab{color:var(--bad)}
-  /* family tree detail */
-  .ftree{display:flex;flex-direction:column;align-items:center;padding:12px 0 6px}
-  .tier{display:flex;flex-direction:column;align-items:center;gap:7px}
-  .tcap{color:var(--muted);font-size:10.5px;letter-spacing:1.5px;font-weight:600}
-  .trow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:680px}
-  .tconn{width:2px;height:20px;background:linear-gradient(var(--line),var(--gold));border-radius:2px;margin:5px 0;opacity:.7}
-  .tchip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-size:14px}
+  /* premium list detail */
+  .detail{background:var(--panel2);border-radius:11px;padding:15px 17px;margin:4px 0;font-size:12.5px}
+  .drow{display:flex;gap:13px;align-items:baseline;margin:8px 0}
+  .drlab{color:var(--muted);font-size:12px;min-width:100px;flex-shrink:0;text-align:right}
+  .drval{display:flex;gap:7px;flex-wrap:wrap}
+  .tchip{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:4px 12px;font-size:14px}
   .tchip .han{display:inline;padding:0 1px;cursor:pointer;border-radius:5px}
   .tchip .han:hover{color:var(--gold)}
   .tchip .han.clash{background:var(--clashbg);color:#fff;padding:1px 4px}
-  .tself-name{background:var(--panel);border:1.5px solid var(--gold);border-radius:12px;padding:7px 20px;font-size:16px;font-weight:600;color:var(--gold)}
-  .dsec{margin-top:14px}
-  .dsec-h{color:var(--muted);font-size:11px;font-weight:700;margin-bottom:7px;letter-spacing:.4px}
+  .dsec{margin:0 0 16px;padding-left:13px;border-left:2px solid var(--gold)}
+  .dsec:last-child{margin-bottom:0}
+  .dsec-h{color:var(--gold);font-size:11px;font-weight:700;margin-bottom:9px;letter-spacing:1.5px}
   .badges{display:flex;gap:8px;flex-wrap:wrap}
   .badge{border-radius:8px;padding:4px 11px;font-size:12px;border:1px solid var(--line)}
   .b-trad{background:rgba(212,175,106,.15);color:var(--gold);border-color:var(--gold)}
@@ -528,14 +527,9 @@ function detailHtml(r){ var det=r.rows[0].detail;
   function chip(name){ var cs=clashByName[name]||{}; return '<span class="tchip">'+Array.from(String(name)).map(function(ch){ if(!/[\u4e00-\u9fff]/.test(ch))return esc(ch); return '<span class="han'+(cs[ch]?' clash':'')+'" data-ch="'+esc(ch)+'">'+esc(ch)+'</span>'; }).join('')+'</span>'; }
   var rels={父亲:[],母亲:[],兄弟姐妹:[],伴侣:[],子女:[]};
   (r._fam||[]).forEach(function(p){ if(rels[p[0]]&&rels[p[0]].indexOf(p[1])<0)rels[p[0]].push(p[1]); });
-  function tier(label,inner){ return '<div class="tier"><div class="tcap">'+label+'</div><div class="trow">'+inner+'</div></div>'; }
-  var tiers=[];
-  var parents=rels.父亲.concat(rels.母亲); if(parents.length)tiers.push(tier('父母',parents.map(chip).join('')));
-  var selfName=String(r.disp||'').trim()||(r.rows[0]?r.rows[0].neu:'本人');
-  tiers.push(tier('本人','<span class="tself-name">'+esc(selfName)+'</span>'));
-  var sibs=rels.兄弟姐妹.concat(rels.伴侣); if(sibs.length)tiers.push(tier('兄弟姐妹 / 伴侣',sibs.map(chip).join('')));
-  if(rels.子女.length)tiers.push(tier('子女',rels.子女.map(chip).join('')));
-  var tree='<div class="ftree">'+tiers.join('<div class="tconn"></div>')+'</div>';
+  function frow(label,arr){ if(!arr.length)return ''; return '<div class="drow"><span class="drlab">'+label+'</span><span class="drval">'+arr.map(chip).join('')+'</span></div>'; }
+  var famRows=frow('父母',rels.父亲.concat(rels.母亲))+frow('兄弟姐妹 / 伴侣',rels.兄弟姐妹.concat(rels.伴侣))+frow('子女',rels.子女);
+  var tree=famRows?'<div class="dsec"><div class="dsec-h">家庭成员</div>'+famRows+'</div>':'';
   var reqs=[];
   if(String(det.disp).trim()){ var trad=det.disp.indexOf('繁')>=0; reqs.push('<span class="badge '+(trad?'b-trad':'b-simp')+'">名册：'+(trad?'繁体':'简体')+'</span>'); }
   if(String(det.taboo).trim())reqs.push('<span class="badge b-taboo">禁忌/要求：'+esc(det.taboo.trim())+'</span>');
