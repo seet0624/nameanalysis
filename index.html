@@ -87,17 +87,16 @@
   .dcell.hot{border-color:var(--bad);background:var(--badbg)}
   .dcell.hot .dlab{color:var(--bad)}
   /* family tree detail */
-  .ftree{display:flex;flex-direction:column;gap:9px;align-items:center;padding:8px 0 4px}
-  .trow,.tself{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
-  .tself{margin:2px 0}
-  .ftree .tlab{color:var(--muted);font-size:11px;min-width:96px;text-align:right}
-  .tself .tlab{color:var(--gold)}
-  .tchips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-  .tchip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 13px;font-size:14px}
+  .ftree{display:flex;flex-direction:column;align-items:center;padding:12px 0 6px}
+  .tier{display:flex;flex-direction:column;align-items:center;gap:7px}
+  .tcap{color:var(--muted);font-size:10.5px;letter-spacing:1.5px;font-weight:600}
+  .trow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:680px}
+  .tconn{width:2px;height:20px;background:linear-gradient(var(--line),var(--gold));border-radius:2px;margin:5px 0;opacity:.7}
+  .tchip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-size:14px}
   .tchip .han{display:inline;padding:0 1px;cursor:pointer;border-radius:5px}
   .tchip .han:hover{color:var(--gold)}
   .tchip .han.clash{background:var(--clashbg);color:#fff;padding:1px 4px}
-  .tself-name{background:var(--panel);border:1.5px solid var(--gold);border-radius:11px;padding:3px 12px}
+  .tself-name{background:var(--panel);border:1.5px solid var(--gold);border-radius:12px;padding:7px 20px;font-size:16px;font-weight:600;color:var(--gold)}
   .dsec{margin-top:14px}
   .dsec-h{color:var(--muted);font-size:11px;font-weight:700;margin-bottom:7px;letter-spacing:.4px}
   .badges{display:flex;gap:8px;flex-wrap:wrap}
@@ -305,7 +304,7 @@ function readingsOf(ch){ var prim=charSyllables(ch); var poly=RULES.POLY[ch]||RU
 function tradOf(ch){ return S2T[ch]||ch; }
 function simpOf(ch){ return T2S[ch]||ch; }
 
-var NOISE=['兄弟姐妹','伴侣','姐姐','弟弟','妹妹','哥哥','大姐','大哥','二哥','三哥','三姐','大嫂','已故','已名正言顺','还没名正言顺','原名','现用名','曾用名','现用','曾用','改名为','改名','已改名','离婚','離婚','已离婚','已離婚','再婚','现在用','现用此名','儿子','女儿','现在用'];
+var NOISE=['兄弟姐妹','伴侣','姐姐','弟弟','妹妹','哥哥','大姐','大哥','二哥','三哥','三姐','大嫂','已故','已名正言顺','还没名正言顺','原名','现用名','曾用名','现用','曾用','改名为','改名','已改名','离婚','離婚','已离婚','已離婚','再婚','过继的','过继','過繼的','過繼','领养的','领养','領養的','領養','抱养的','抱养','收养的','收养','继子','继女','现在用','现用此名','儿子','女儿','现在用'];
 var NULLS={'无':1,'無':1,'-':1,'NA':1,'na':1,'None':1,'':1};
 function splitNames(text){ var t=String(text==null?'':text); if(NULLS[t.trim()])return []; t=t.replace(/[（(][^）)]*[）)]/g,''); for(var i=0;i<NOISE.length;i++)t=t.split(NOISE[i]).join(''); var parts=t.split(/[@，,、；;：:　\s\/]+/),out=[]; for(var j=0;j<parts.length;j++){var c=cjkOnly(parts[j]);if(c&&!NULLS[c])out.push(c);} return out; }
 function familyMembers(row, cols){ var out=[];
@@ -529,11 +528,14 @@ function detailHtml(r){ var det=r.rows[0].detail;
   function chip(name){ var cs=clashByName[name]||{}; return '<span class="tchip">'+Array.from(String(name)).map(function(ch){ if(!/[\u4e00-\u9fff]/.test(ch))return esc(ch); return '<span class="han'+(cs[ch]?' clash':'')+'" data-ch="'+esc(ch)+'">'+esc(ch)+'</span>'; }).join('')+'</span>'; }
   var rels={父亲:[],母亲:[],兄弟姐妹:[],伴侣:[],子女:[]};
   (r._fam||[]).forEach(function(p){ if(rels[p[0]]&&rels[p[0]].indexOf(p[1])<0)rels[p[0]].push(p[1]); });
-  function band(label,arr){ if(!arr.length)return ''; return '<div class="trow"><div class="tlab">'+label+'</div><div class="tchips">'+arr.map(chip).join('')+'</div></div>'; }
-  var selfNames=r.rows.map(function(rw){ return '<span class="tself-name">'+nameHtml(rw)+'</span>'; }).join('');
-  var tree='<div class="ftree">'+band('父母',rels.父亲.concat(rels.母亲))+
-    '<div class="tself"><div class="tlab">本人</div><div class="tchips">'+selfNames+'</div></div>'+
-    band('兄弟姐妹 / 伴侣',rels.兄弟姐妹.concat(rels.伴侣))+band('子女',rels.子女)+'</div>';
+  function tier(label,inner){ return '<div class="tier"><div class="tcap">'+label+'</div><div class="trow">'+inner+'</div></div>'; }
+  var tiers=[];
+  var parents=rels.父亲.concat(rels.母亲); if(parents.length)tiers.push(tier('父母',parents.map(chip).join('')));
+  var selfName=String(r.disp||'').trim()||(r.rows[0]?r.rows[0].neu:'本人');
+  tiers.push(tier('本人','<span class="tself-name">'+esc(selfName)+'</span>'));
+  var sibs=rels.兄弟姐妹.concat(rels.伴侣); if(sibs.length)tiers.push(tier('兄弟姐妹 / 伴侣',sibs.map(chip).join('')));
+  if(rels.子女.length)tiers.push(tier('子女',rels.子女.map(chip).join('')));
+  var tree='<div class="ftree">'+tiers.join('<div class="tconn"></div>')+'</div>';
   var reqs=[];
   if(String(det.disp).trim()){ var trad=det.disp.indexOf('繁')>=0; reqs.push('<span class="badge '+(trad?'b-trad':'b-simp')+'">名册：'+(trad?'繁体':'简体')+'</span>'); }
   if(String(det.taboo).trim())reqs.push('<span class="badge b-taboo">禁忌/要求：'+esc(det.taboo.trim())+'</span>');
