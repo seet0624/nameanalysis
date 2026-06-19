@@ -86,6 +86,28 @@
   .dcell .dval{color:var(--ink);font-size:13px;line-height:1.55;word-break:break-word;white-space:pre-wrap}
   .dcell.hot{border-color:var(--bad);background:var(--badbg)}
   .dcell.hot .dlab{color:var(--bad)}
+  /* family tree detail */
+  .ftree{display:flex;flex-direction:column;gap:9px;align-items:center;padding:8px 0 4px}
+  .trow,.tself{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
+  .tself{margin:2px 0}
+  .ftree .tlab{color:var(--muted);font-size:11px;min-width:96px;text-align:right}
+  .tself .tlab{color:var(--gold)}
+  .tchips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .tchip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 13px;font-size:14px}
+  .tchip .han{display:inline;padding:0 1px;cursor:pointer;border-radius:5px}
+  .tchip .han:hover{color:var(--gold)}
+  .tchip .han.clash{background:var(--clashbg);color:#fff;padding:1px 4px}
+  .tself-name{background:var(--panel);border:1.5px solid var(--gold);border-radius:11px;padding:3px 12px}
+  .dsec{margin-top:14px}
+  .dsec-h{color:var(--muted);font-size:11px;font-weight:700;margin-bottom:7px;letter-spacing:.4px}
+  .badges{display:flex;gap:8px;flex-wrap:wrap}
+  .badge{border-radius:8px;padding:4px 11px;font-size:12px;border:1px solid var(--line)}
+  .b-trad{background:rgba(212,175,106,.15);color:var(--gold);border-color:var(--gold)}
+  .b-simp{background:var(--chip);color:var(--muted)}
+  .b-taboo{background:var(--chip);color:var(--ink)}
+  .b-status{background:var(--badbg);color:var(--bad);border-color:var(--bad)}
+  .nlist{margin:0;padding-left:20px}
+  .nlist li{margin:4px 0;line-height:1.55}
   .settings,.dbpanel{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin:16px 0;overflow:hidden}
   .settings summary{cursor:pointer;padding:13px 18px;font-weight:600;list-style:none}
   .settings summary::-webkit-details-marker{display:none}
@@ -283,7 +305,7 @@ function readingsOf(ch){ var prim=charSyllables(ch); var poly=RULES.POLY[ch]||RU
 function tradOf(ch){ return S2T[ch]||ch; }
 function simpOf(ch){ return T2S[ch]||ch; }
 
-var NOISE=['兄弟姐妹','伴侣','姐姐','弟弟','妹妹','哥哥','大姐','大哥','二哥','已故','已名正言顺','还没名正言顺','原名','现用名','曾用名','现用','曾用','离婚','儿子','女儿','现在用'];
+var NOISE=['兄弟姐妹','伴侣','姐姐','弟弟','妹妹','哥哥','大姐','大哥','二哥','三哥','三姐','大嫂','已故','已名正言顺','还没名正言顺','原名','现用名','曾用名','现用','曾用','改名为','改名','已改名','离婚','離婚','已离婚','已離婚','再婚','现在用','现用此名','儿子','女儿','现在用'];
 var NULLS={'无':1,'無':1,'-':1,'NA':1,'na':1,'None':1,'':1};
 function splitNames(text){ var t=String(text==null?'':text); if(NULLS[t.trim()])return []; t=t.replace(/[（(][^）)]*[）)]/g,''); for(var i=0;i<NOISE.length;i++)t=t.split(NOISE[i]).join(''); var parts=t.split(/[@，,、；;：:　\s\/]+/),out=[]; for(var j=0;j<parts.length;j++){var c=cjkOnly(parts[j]);if(c&&!NULLS[c])out.push(c);} return out; }
 function familyMembers(row, cols){ var out=[];
@@ -405,7 +427,7 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
     if(cols.status>=0){ var st=String(r0[cols.status]==null?'':r0[cols.status]).trim(); if(st&&!NULLS[st]){ var sm='⚠ 有订单状态备注「'+st+'」，请人工检查这单状态再决定'; rowData.forEach(function(rd){ if(rd.msgs.indexOf(sm)<0)rd.msgs.push(sm); }); } }
     var problem=rowData.some(function(rd){return rd.msgs.length>0;});
     if(needEyes)rowData.forEach(function(rd){rd.warns.push('【备注提到 朋友/避免/同名，可能有别姓的人要避开，请人工看】');});
-    personNotes.forEach(function(n){rowData.forEach(function(rd){rd.warns.push(n);});});
+    personNotes.forEach(function(n){ /* 禁忌栏「请人工确认」提示已按要求隐藏 */ void n; });
     results.push({sid:grp.sid,disp:grp._disp,order:grp._order,rows:rowData,problem:problem,verdict:problem?'有问题':'通过',unresolvedOrders:unresolvedOrders,_fam:fam,_tb:tb});
   }
   // #8 同批不重名：不同学员出现完全相同的新名 → 提醒
@@ -503,8 +525,28 @@ function msgsHtml(rw){ var out='';
   rw.warns.forEach(function(w){ out+='<div class="w">• '+esc(w)+'</div>'; });
   if(!out)out='<div style="color:var(--ok)">✓ 无自动检出问题</div>'; return out; }
 function detailHtml(r){ var det=r.rows[0].detail;
-  var pairs=[['父亲',det.father],['母亲',det.mother],['兄弟姐妹 / 伴侣',det.sib],['子女',det.kids],['禁忌字',det.taboo],['名册展示',det.disp],['订单状态备注',det.status],['备注',det.note1],['总备注',det.note2]];
-  return '<div class="detail"><div class="dgrid">'+pairs.filter(function(d){return String(d[1]).trim();}).map(function(d){ var hot=(d[0]==='订单状态备注'); return '<div class="dcell'+(hot?' hot':'')+'"><div class="dlab">'+d[0]+(hot?' ⚠':'')+'</div><div class="dval">'+esc(d[1])+'</div></div>'; }).join('')+'</div></div>'; }
+  var clashByName={}; r.rows.forEach(function(rw){ rw.hits.forEach(function(h){ if(h.fname){(clashByName[h.fname]||(clashByName[h.fname]={}))[h.fc]=1;} }); });
+  function chip(name){ var cs=clashByName[name]||{}; return '<span class="tchip">'+Array.from(String(name)).map(function(ch){ if(!/[\u4e00-\u9fff]/.test(ch))return esc(ch); return '<span class="han'+(cs[ch]?' clash':'')+'" data-ch="'+esc(ch)+'">'+esc(ch)+'</span>'; }).join('')+'</span>'; }
+  var rels={父亲:[],母亲:[],兄弟姐妹:[],伴侣:[],子女:[]};
+  (r._fam||[]).forEach(function(p){ if(rels[p[0]]&&rels[p[0]].indexOf(p[1])<0)rels[p[0]].push(p[1]); });
+  function band(label,arr){ if(!arr.length)return ''; return '<div class="trow"><div class="tlab">'+label+'</div><div class="tchips">'+arr.map(chip).join('')+'</div></div>'; }
+  var selfNames=r.rows.map(function(rw){ return '<span class="tself-name">'+nameHtml(rw)+'</span>'; }).join('');
+  var tree='<div class="ftree">'+band('父母',rels.父亲.concat(rels.母亲))+
+    '<div class="tself"><div class="tlab">本人</div><div class="tchips">'+selfNames+'</div></div>'+
+    band('兄弟姐妹 / 伴侣',rels.兄弟姐妹.concat(rels.伴侣))+band('子女',rels.子女)+'</div>';
+  var reqs=[];
+  if(String(det.disp).trim()){ var trad=det.disp.indexOf('繁')>=0; reqs.push('<span class="badge '+(trad?'b-trad':'b-simp')+'">名册：'+(trad?'繁体':'简体')+'</span>'); }
+  if(String(det.taboo).trim())reqs.push('<span class="badge b-taboo">禁忌/要求：'+esc(det.taboo.trim())+'</span>');
+  if(String(det.status).trim())reqs.push('<span class="badge b-status">⚠ 状态备注：'+esc(det.status.trim())+'</span>');
+  var reqHtml=reqs.length?'<div class="dsec"><div class="dsec-h">命名要求</div><div class="badges">'+reqs.join('')+'</div></div>':'';
+  function parseNotes(t){ t=String(t||'').trim(); if(!t)return ''; var items=t.split(/(?=\s*\d+\s*[,，、.．])/).map(function(s){return s.trim();}).filter(Boolean);
+    if(items.length>=2)return '<ol class="nlist">'+items.map(function(s){return '<li>'+esc(s.replace(/^\s*\d+\s*[,，、.．]\s*/,''))+'</li>';}).join('')+'</ol>';
+    return '<div class="dval">'+esc(t)+'</div>'; }
+  var notesHtml='';
+  if(String(det.note1).trim())notesHtml+=parseNotes(det.note1);
+  if(String(det.note2).trim())notesHtml+='<div style="margin-top:8px;color:var(--muted);font-size:11px">总备注</div>'+parseNotes(det.note2);
+  var noteSec=notesHtml?'<div class="dsec"><div class="dsec-h">命名师备注</div>'+notesHtml+'</div>':'';
+  return '<div class="detail">'+tree+reqHtml+noteSec+'</div>'; }
 
 function renderActive(){ var host=document.getElementById('files'); host.innerHTML='';
   if(!parsedFiles.length){ host.innerHTML='<div class="empty">还没有文件</div>'; return; }
