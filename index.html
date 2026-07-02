@@ -355,7 +355,7 @@ function locateHeader(data){ var hr=-1; for(var i=0;i<Math.min(data.length,20);i
 function colsFrom(header){ function col(n){return header.indexOf(n);} var status=-1; header.forEach(function(h,i){ if(status<0&&/状态备注|订单状态|狀態備註|訂單狀態/.test(String(h)))status=i; }); return {seq:col('序号'),user:col('使用人姓名'),order:col('订单编号'),surname:col('新名字姓氏'),father:col('父亲名字'),mother:col('母亲名字'),sib:col('兄弟姐妹'),kids:col('子女'),taboo:col('禁忌字'),neu:col('新名'),py:col('新名拼音'),disp:col('名册展示'),note1:col('备注'),note2:col('总备注'),status:status}; }
 function groupRows(data,hr,cNeu,cSeq){ var g=[]; for(var r=hr+1;r<data.length;r++){ if(String(data[r][cNeu]==null?'':data[r][cNeu]).trim()==='')continue; var sid=data[r][cSeq];
   if(sid!==''&&sid!=null&&(g.length===0||g[g.length-1].sid!==sid))g.push({sid:sid,rows:[r]}); else if(g.length>0)g[g.length-1].rows.push(r); else g.push({sid:sid,rows:[r]}); } return g; }
-var ORDER_RE=/[A-Za-z]{1,2}\d{7,}/g;
+var ORDER_RE=/[A-Za-z]{1,2}\d{7,}|\d{12,}/g;
 
 // 解析一个文件 -> people（含自己的订单->新名，用来建总库）
 function parseFile(data){ var loc=locateHeader(data); if(!loc)return null; var hr=loc.hr,header=loc.header,cols=colsFrom(header);
