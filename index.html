@@ -159,6 +159,7 @@
   .scard.collapsed .crow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .crow-nm{font-size:15px;font-weight:600;letter-spacing:1px}
   .crow-ok{color:var(--ok);font-size:12px}
+  .crow-ord{color:var(--warn);font-size:11px;border:1px solid var(--warn);border-radius:7px;padding:2px 8px;margin-right:8px}
   .scard.problem{border-left-color:var(--bad)}
   .scard .shead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .scard .sid{color:var(--muted);font-size:12px}
@@ -480,7 +481,7 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
     if(RULES.checkOrder){ var scanText=''; rows.forEach(function(ri){ data[ri].forEach(function(cell){scanText+=' '+String(cell==null?'':cell);}); }); var seen={};
       (scanText.match(ORDER_RE)||[]).forEach(function(num){ var key=num.toUpperCase(); if(ownSet[key]||seen[key])return; seen[key]=1;
         var rel=orderIndex[key];
-        if(rel){ rel._givens.forEach(function(gn){if(gn)fam.push(['关联学员「'+rel._disp+'」('+num+')',gn,false,true]);}); detectedOrders.push({num:num,tag:'已关联 '+rel._disp}); }
+        if(rel){ var relNames=[]; rel._givens.forEach(function(gn){if(gn){fam.push(['关联学员「'+rel._disp+'」('+num+')',gn,false,true]); if(relNames.indexOf(gn)<0)relNames.push(gn);}}); detectedOrders.push({num:num,tag:'已关联 '+rel._disp+(relNames.length?'（'+relNames.join('／')+'）':'')}); orderProblems.push('✓ 订单「'+num+'」对应家人「'+rel._disp+'」'+(relNames.length?'（新名：'+relNames.join('／')+'）':'')+'——工具已自动比对撞字撞音，建议你再人手核对一次这个名字'); }
         else if(orderDB&&orderDB[key]){ orderDB[key].forEach(function(fn){fam.push(['关联订单 '+num+' 的新名',fn]);}); detectedOrders.push({num:num,tag:'已关联'}); }
         else { unresolvedOrders.push(num); detectedOrders.push({num:num,tag:'待补'}); orderProblems.push('⚠ 家人栏/备注有名正言顺订单号「'+num+'」——还查不到它的新名。如果它的名字还没下来，可以先不填（不算问题）；等下来了在上方输入框填上，就会自动重查撞字撞音'); } });
       if(RULES.checkOrderFuzzy){ var seen2={};
@@ -681,7 +682,7 @@ function renderActive(){ var host=document.getElementById('files'); host.innerHT
       html+='<div class="scard collapsed" data-sid="'+sid+'" data-pass="1">'+
         '<div class="crow"><span class="sid">序'+sid+'</span><span class="who">'+esc(r.disp||'')+'</span>'+
         '<span class="crow-nm">'+r.rows.map(function(rw){return esc(rw.neu);}).join(' ／ ')+'</span>'+
-        '<span class="sp"></span><span class="crow-ok">✓ 通过</span>'+
+        '<span class="sp"></span>'+((r.detectedOrders&&r.detectedOrders.filter(function(o){return o.tag!=='本人';}).length)?'<span class="crow-ord" title="有关联订单，点开人手核对">📎 关联订单待核</span>':'')+'<span class="crow-ok">✓ 通过</span>'+
         ' <label class="revw'+(r.reviewed?' on':'')+'" onclick="event.stopPropagation()"><input type="checkbox" class="rvchk" data-sid="'+sid+'" '+(r.reviewed?'checked':'')+'> 已复核</label>'+
         '<span class="sid">▾ 点开看</span></div></div>';
       return;
