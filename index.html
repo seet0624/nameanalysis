@@ -238,6 +238,10 @@ body:not(.light) .iconbtn:hover{border-color:var(--gold);color:var(--gold)}
 body:not(.light) .collapsed{background:rgba(28,37,60,.32)!important}
 body:not(.light) .collapsed:hover{background:rgba(28,37,60,.55)!important}
 
+
+  mark.shl{background:rgba(212,175,106,.32);color:inherit;border-radius:3px;padding:0 2px}
+  .qsearch{cursor:pointer;text-decoration:underline dotted rgba(212,175,106,.5);text-underline-offset:3px}
+  .qsearch:hover{color:var(--gold)}
 </style>
 </head>
 <body>
@@ -300,7 +304,7 @@ body:not(.light) .collapsed:hover{background:rgba(28,37,60,.55)!important}
         <button data-f="bad" data-i18n="f_bad">只看有问题</button>
         <button data-f="ok" data-i18n="f_ok">只看通过</button>
       </div>
-      <input class="search" id="searchBox" placeholder="搜学员 / 订单号 / 字…" data-i18n-ph="search">
+      <input class="search" id="searchBox" placeholder="搜学员 / 订单号 / 备注 / 家人 / 字 / 拼音（空格=同时符合，-排除）" data-i18n-ph="search">
       <button class="iconbtn" id="sortBtn" data-i18n="sort">问题排前</button>
       <button class="iconbtn" id="expandAll" data-i18n="expandall">展开资料</button>
       <span class="spacer"></span>
@@ -641,7 +645,7 @@ function msgsHtml(rw){ var out='';
   if(!out)out='<div style="color:var(--ok)">✓ 无自动检出问题</div>'; return out; }
 function detailHtml(r){ var det=r.rows[0].detail;
   var clashByName={}; r.rows.forEach(function(rw){ rw.hits.forEach(function(h){ if(h.fname){(clashByName[h.fname]||(clashByName[h.fname]={}))[h.fc]=1;} }); });
-  function chip(name){ var cs=clashByName[name]||{}; return '<span class="tchip">'+Array.from(String(name)).map(function(ch){ if(!/[\u4e00-\u9fff]/.test(ch))return esc(ch); return '<span class="han'+(cs[ch]?' clash':'')+'" data-ch="'+esc(ch)+'">'+esc(ch)+'</span>'; }).join('')+'</span>'; }
+  function chip(name){ var cs=clashByName[name]||{}; return '<span class="tchip qsearch" data-q="'+esc(name)+'" title="点一下搜这个名字">'+Array.from(String(name)).map(function(ch){ if(!/[\u4e00-\u9fff]/.test(ch))return esc(ch); return '<span class="han'+(cs[ch]?' clash':'')+'" data-ch="'+esc(ch)+'">'+esc(ch)+'</span>'; }).join('')+'</span>'; }
   var rels={父亲:[],母亲:[],兄弟姐妹:[],伴侣:[],子女:[]};
   (r._fam||[]).forEach(function(p){ if(rels[p[0]]&&rels[p[0]].indexOf(p[1])<0)rels[p[0]].push(p[1]); });
   function frow(label,arr){ if(!arr.length)return ''; return '<div class="drow"><span class="drlab">'+label+'</span><span class="drval">'+arr.map(chip).join('')+'</span></div>'; }
@@ -650,36 +654,92 @@ function detailHtml(r){ var det=r.rows[0].detail;
   var reqs=[];
   if(String(det.disp).trim()){ var trad=det.disp.indexOf('繁')>=0; reqs.push('<span class="badge '+(trad?'b-trad':'b-simp')+'">名册：'+(trad?'繁体':'简体')+'</span>'); }
   if(String(det.zod||'').trim())reqs.push('<span class="badge b-taboo">生肖：'+esc(det.zod.trim())+'</span>');
-  if(String(det.taboo).trim())reqs.push('<span class="badge b-taboo">禁忌/要求：'+esc(det.taboo.trim())+'</span>');
-  if(String(det.status).trim())reqs.push('<span class="badge b-status">⚠ 状态备注：'+esc(det.status.trim())+'</span>');
+  if(String(det.taboo).trim())reqs.push('<span class="badge b-taboo">禁忌/要求：'+hlText(esc(det.taboo.trim()))+'</span>');
+  if(String(det.status).trim())reqs.push('<span class="badge b-status">⚠ 状态备注：'+hlText(esc(det.status.trim()))+'</span>');
   var reqHtml=reqs.length?'<div class="dsec"><div class="dsec-h">命名要求</div><div class="badges">'+reqs.join('')+'</div></div>':'';
   function parseNotes(t){ t=String(t||'').trim(); if(!t)return ''; var items=t.split(/(?=\s*\d+\s*[,，、.．])/).map(function(s){return s.trim();}).filter(Boolean);
-    if(items.length>=2)return '<ol class="nlist">'+items.map(function(s){return '<li>'+esc(s.replace(/^\s*\d+\s*[,，、.．]\s*/,''))+'</li>';}).join('')+'</ol>';
-    return '<div class="dval">'+esc(t)+'</div>'; }
+    if(items.length>=2)return '<ol class="nlist">'+items.map(function(s){return '<li>'+hlText(esc(s.replace(/^\s*\d+\s*[,，、.．]\s*/,'')))+'</li>';}).join('')+'</ol>';
+    return '<div class="dval">'+hlText(esc(t))+'</div>'; }
   var notesHtml='';
   if(String(det.note1).trim())notesHtml+=parseNotes(det.note1);
   if(String(det.note2).trim())notesHtml+='<div style="margin-top:8px;color:var(--muted);font-size:11px">总备注</div>'+parseNotes(det.note2);
-  var noteSec=notesHtml?'<div class="dsec"><div class="dsec-h">检测到的订单号</div>'+((r.detectedOrders&&r.detectedOrders.length)?r.detectedOrders.map(function(o){ var col=o.tag.indexOf('待补')>=0?'var(--warn)':(o.tag.indexOf('疑似')>=0?'var(--bad)':(o.tag.indexOf('关联')>=0?'var(--ok)':'var(--muted)')); return '<span class="badge b-taboo" style="border-color:'+col+';color:'+col+'">'+esc(o.num)+' · '+esc(o.tag)+'</span>'; }).join(' '):'<span style="color:var(--muted)">这单没扫到其他订单号</span>')+'</div>'+'<div class="dsec"><div class="dsec-h">命名师备注</div>'+notesHtml+'</div>':'';
+  var noteSec=notesHtml?'<div class="dsec"><div class="dsec-h">检测到的订单号</div>'+((r.detectedOrders&&r.detectedOrders.length)?r.detectedOrders.map(function(o){ var col=o.tag.indexOf('待补')>=0?'var(--warn)':(o.tag.indexOf('疑似')>=0?'var(--bad)':(o.tag.indexOf('关联')>=0?'var(--ok)':'var(--muted)')); return '<span class="badge b-taboo qsearch" data-q="'+esc(o.num)+'" title="点一下搜这个订单号" style="border-color:'+col+';color:'+col+'">'+hlText(esc(o.num))+' · '+esc(o.tag)+'</span>'; }).join(' '):'<span style="color:var(--muted)">这单没扫到其他订单号</span>')+'</div>'+'<div class="dsec"><div class="dsec-h">命名师备注</div>'+notesHtml+'</div>':'';
   return '<div class="detail">'+tree+reqHtml+noteSec+'</div>'; }
 
+
+function searchHay(r){
+  if(r._hay)return r._hay;
+  var parts=[];
+  parts.push(r.disp||''); parts.push('序'+r.sid); parts.push(r.sid); parts.push(r.order||'');
+  (r.detectedOrders||[]).forEach(function(o){ parts.push(o.num); parts.push(o.tag); });
+  (r.unresolvedOrders||[]).forEach(function(o){ parts.push(o); });
+  var det=(r.rows[0]&&r.rows[0].detail)||{};
+  ['father','mother','sib','kids','taboo','disp','note1','note2','status','zod'].forEach(function(k){ if(det[k])parts.push(String(det[k])); });
+  (r._fam||[]).forEach(function(f){ parts.push(f[0]); parts.push(f[1]); });
+  r.rows.forEach(function(rw){
+    parts.push(rw.neu); parts.push(rw.surname||''); parts.push(rw.given||'');
+    parts.push(rw.py||''); parts.push(rw.pyToned||'');
+    (rw.msgs||[]).forEach(function(m){parts.push(m);});
+    (rw.warns||[]).forEach(function(w){parts.push(w);});
+    Array.from(rw.neu||'').forEach(function(ch){ var y=(typeof yueSylOf==='function')?yueSylOf(ch):''; if(y)parts.push(y); });
+  });
+  var s=parts.join(' ');
+  var both=s+' '+Array.from(s).map(function(c){return (typeof norm==='function')?norm(c):c;}).join('');
+  try{ both+=' '+Array.from(s).map(function(c){return (T2S&&T2S[c])||(S2T&&S2T[c])||'';}).join(''); }catch(e){}
+  r._hay=both.toLowerCase();
+  return r._hay;
+}
+function matchSearch(r, term){
+  var hay=searchHay(r);
+  var toks=String(term).trim().toLowerCase().split(/\s+/).filter(Boolean);
+  for(var i=0;i<toks.length;i++){
+    var t=toks[i], neg=false;
+    if(t.charAt(0)==='-'){ neg=true; t=t.slice(1); if(!t)continue; }
+    var alt=Array.from(t).map(function(c){ return (typeof norm==='function')?norm(c):c; }).join('');
+    var hit=(hay.indexOf(t)>=0)||(alt&&hay.indexOf(alt)>=0);
+    try{ if(!hit){ var flip=Array.from(t).map(function(c){return (T2S&&T2S[c])||(S2T&&S2T[c])||c;}).join(''); if(flip&&hay.indexOf(flip)>=0)hit=true; } }catch(e){}
+    if(neg?hit:!hit)return false;
+  }
+  return true;
+}
+
+function hlText(s){
+  if(!searchTerm)return s;
+  var toks=String(searchTerm).trim().split(/\s+/).filter(function(t){return t&&t.charAt(0)!=='-';});
+  var out=s;
+  toks.forEach(function(t){
+    try{
+      var variants=[t];
+      var alt=Array.from(t).map(function(c){return (typeof norm==='function')?norm(c):c;}).join(''); if(alt&&alt!==t)variants.push(alt);
+      try{ var flip=Array.from(t).map(function(c){return (T2S&&T2S[c])||(S2T&&S2T[c])||c;}).join(''); if(flip&&variants.indexOf(flip)<0)variants.push(flip); }catch(e){}
+      variants.forEach(function(v){
+        var re=new RegExp('('+v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+        out=out.replace(re,'<mark class="shl">$1</mark>');
+      });
+    }catch(e){}
+  });
+  return out;
+}
+function doSearch(q){ searchTerm=q||''; var sb=document.getElementById('searchBox'); if(sb)sb.value=searchTerm; var pp=document.getElementById('pop'); if(pp)pp.style.display='none'; renderActive(); try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){} }
 function renderActive(){ var host=document.getElementById('files'); host.innerHTML='';
   if(!parsedFiles.length){ host.innerHTML='<div class="empty">还没有文件</div>'; return; }
   var x=parsedFiles[activeFile]; var res=x.audit.results.slice();
   var nbad=res.filter(function(r){return r.problem;}).length;
   var unres={}; res.forEach(function(r){ (r.unresolvedOrders||[]).forEach(function(num){ var k=num.toUpperCase(); (unres[k]||(unres[k]=[])).push(r.disp||('序'+r.sid)); }); });
   var ukeys=Object.keys(unres);
-  var html='<div class="summary"><span class="big">'+esc(x.name)+'</span><span>共 '+res.length+' 位学员</span><span class="pill '+(nbad?'bad':'ok')+'">'+(nbad?nbad+' 位有问题':'全部通过')+'</span></div>';
+  var _shown=searchTerm?res.filter(function(rr){return matchSearch(rr,searchTerm);}).length:res.length;
+  var html='<div class="summary"><span class="big">'+esc(x.name)+'</span><span>共 '+res.length+' 位学员</span>'+(searchTerm?'<span class="pill '+(_shown?'ok':'bad')+'">搜到 '+_shown+' 位</span>':'')+'<span class="pill '+(nbad?'bad':'ok')+'">'+(nbad?nbad+' 位有问题':'全部通过')+'</span></div>';
   if(ukeys.length){ var rowsU=ukeys.map(function(k){ return '<div class="urow"><span class="onum">订单 '+esc(k)+'</span><span class="who">被 '+esc(unres[k].join('、'))+' 引用</span><input class="oinput" data-num="'+esc(k)+'" placeholder="查到名字就填这里（两个新名用逗号分开）"></div>'; }).join('');
     html+='<div class="unresbox"><div class="uhead">📋 要人手查的订单（备注提到的名正言顺订单，请去系统看名字下来了没）<br><span style="font-weight:400;color:var(--muted);font-size:12px">下来了 → 填进来 → 按「加入并重新检查」，系统就会比对撞字撞音；还没下来 → 先不填，不算问题</span></div>'+rowsU+'<button class="btn" id="applyOrders" style="margin-top:8px">加入并重新检查</button></div>'; }
   if(sortProblems)res.sort(function(a,b){return (b.problem?1:0)-(a.problem?1:0);});
   html+='<div class="cards">';
   res.forEach(function(r){
     if(filterMode==='bad'&&!r.problem)return; if(filterMode==='ok'&&r.problem)return;
-    if(searchTerm){ var hay=(r.disp||'')+' '+r.sid+' '+(r.order||'')+' '+r.rows.map(function(rw){return rw.neu;}).join(' '); if(hay.toLowerCase().indexOf(searchTerm.toLowerCase())<0)return; }
+    if(searchTerm && !matchSearch(r, searchTerm))return;
     var sid=esc(String(r.sid));
     var vsel='<select class="verdict '+(r.problem?'bad':'ok')+'" data-sid="'+sid+'"><option '+(r.verdict==='有问题'?'selected':'')+'>有问题</option><option '+(r.verdict==='通过'?'selected':'')+'>通过</option></select>';
     var names=r.rows.map(function(rw){ return '<div class="nblk"><div class="nmrow">'+nameHtml(rw)+'<button class="nspk" data-say="'+esc(rw.neu)+'">🔊</button></div><div class="msgs">'+msgsHtml(rw)+'</div></div>'; }).join('');
-    var collapsed = (!r.problem && !openPass[sid] && !expandAll);
+    var collapsed = (!r.problem && !openPass[sid] && !expandAll && !searchTerm);
     if(collapsed){
       html+='<div class="scard collapsed" data-sid="'+sid+'" data-pass="1">'+
         '<div class="crow"><span class="sid">序'+sid+'</span><span class="who">'+esc(r.disp||'')+'</span>'+
@@ -709,6 +769,7 @@ function renderActive(){ var host=document.getElementById('files'); host.innerHT
   host.querySelectorAll('select.verdict').forEach(function(sel){ sel.onchange=function(){ changeVerdict(sel.getAttribute('data-sid'), sel.value); }; });
   host.querySelectorAll('.han').forEach(function(el){ el.onclick=function(ev){ ev.stopPropagation(); showPop(ev, el.getAttribute('data-ch')); }; });
   host.querySelectorAll('.nspk').forEach(function(el){ el.onclick=function(){ speak(el.getAttribute('data-say')); }; });
+  host.querySelectorAll('.qsearch').forEach(function(el){ el.onclick=function(ev){ if(ev.target.closest && ev.target.closest('.han'))return; ev.stopPropagation(); doSearch(el.getAttribute('data-q')); }; });
   host.querySelectorAll('.scard.collapsed').forEach(function(el){ el.onclick=function(ev){ if(ev.target.closest('.revw'))return; openPass[el.getAttribute('data-sid')]=1; renderActive(); }; });
   host.querySelectorAll('.cls').forEach(function(el){ el.onclick=function(){ delete openPass[el.getAttribute('data-sid')]; renderActive(); }; });
   host.querySelectorAll('.rvchk').forEach(function(el){ el.onchange=function(){ var sid=el.getAttribute('data-sid'); var r=x.audit.results.filter(function(rr){return String(rr.sid)===sid;})[0]; if(r){ r.reviewed=el.checked; saveReviews(); renderDashboard(); renderActive(); } }; });
@@ -749,8 +810,12 @@ function showPop(ev,ch){ var pop=document.getElementById('pop'); var reads=readi
   var diff=trad!==ch?('繁体：<b style="color:var(--gold)">'+esc(trad)+'</b>'):(simp!==ch?('简体：<b style="color:var(--gold)">'+esc(simp)+'</b>'):'简繁相同');
   var rd=reads.length?reads.map(function(r){ var ex=exampleWord(ch,r); return '<span class="read" data-say="'+esc(ex||ch)+'">'+esc(r)+(ex?'（'+esc(ex)+'）':'')+'</span>'; }).join(' '):'<span style="color:var(--muted)">查无读音</span>';
   var yue=(typeof yueSylOf==='function')?yueSylOf(ch):''; var yrow=yue?'<div class="row">粤语：<b style="color:var(--gold)">'+esc(yue)+'</b></div>':'';
-  pop.innerHTML='<h4>'+esc(ch)+' <button class="play" data-say="'+esc(ch)+'">🔊 听</button></h4><div class="row">普通话：'+rd+(reads.length>1?'<span style="color:var(--warn)">多音字</span>':'')+'</div>'+yrow+'<div class="row">'+diff+'</div><div class="row"><a href="https://www.zdic.net/hans/'+encodeURIComponent(ch)+'" target="_blank">📖 查字典（字义/部首/笔画）</a></div>';
+  pop.innerHTML='<h4>'+esc(ch)+' <button class="play" data-say="'+esc(ch)+'">🔊 听</button></h4><div class="row">普通话：'+rd+(reads.length>1?'<span style="color:var(--warn)">多音字</span>':'')+'</div>'+yrow+'<div class="row">'+diff+'</div><div class="row"><a href="https://www.zdic.net/hans/'+encodeURIComponent(ch)+'" target="_blank">📖 查字典（字义/部首/笔画）</a></div>'+
+    '<div class="row" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="iconbtn qs-go" data-q="'+esc(ch)+'">🔎 搜这个字</button>'+
+    (reads.length?'<button class="iconbtn qs-go" data-q="'+esc(String(reads[0]).replace(/[0-9]/g,''))+'">🔎 搜这个音</button>':'')+
+    (yue?'<button class="iconbtn qs-go" data-q="'+esc(yue)+'">🔎 搜粤语音</button>':'')+'</div>';
   pop.style.display='block'; var x=ev.clientX,y=ev.clientY+16; if(x+300>window.innerWidth)x=window.innerWidth-300; pop.style.left=x+'px'; pop.style.top=y+'px';
+  pop.querySelectorAll('.qs-go').forEach(function(b){ b.onclick=function(){ doSearch(b.getAttribute('data-q')); }; });
   pop.querySelectorAll('[data-say]').forEach(function(b){ b.onclick=function(){ speak(b.getAttribute('data-say')); }; });
 }
 document.addEventListener('click',function(e){ var pop=document.getElementById('pop'); if(pop.style.display==='block'&&!pop.contains(e.target)&&!e.target.closest('.han'))pop.style.display='none'; });
