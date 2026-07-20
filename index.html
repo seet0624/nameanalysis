@@ -159,7 +159,9 @@
   .scard.collapsed .crow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .crow-nm{font-size:15px;font-weight:600;letter-spacing:1px}
   .crow-ok{color:var(--ok);font-size:12px}
-  .crow-ord{color:var(--warn);font-size:11px;border:1px solid var(--warn);border-radius:7px;padding:2px 8px;margin-right:8px}
+  .crow-ord{font-size:11px;border-radius:7px;padding:2px 8px;margin-right:8px;border:1px solid}
+  .crow-ord.pend{color:var(--warn);border-color:var(--warn)}
+  .crow-ord.lnk{color:var(--ok);border-color:var(--ok);opacity:.85}
   .scard.problem{border-left-color:var(--bad)}
   .scard .shead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .scard .sid{color:var(--muted);font-size:12px}
@@ -483,7 +485,7 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
         var rel=orderIndex[key];
         if(rel){ var relNames=[]; rel._givens.forEach(function(gn){if(gn){fam.push(['关联学员「'+rel._disp+'」('+num+')',gn,false,true]); if(relNames.indexOf(gn)<0)relNames.push(gn);}}); detectedOrders.push({num:num,tag:'已关联 '+rel._disp+(relNames.length?'（'+relNames.join('／')+'）':'')}); orderProblems.push('✓ 订单「'+num+'」对应家人「'+rel._disp+'」'+(relNames.length?'（新名：'+relNames.join('／')+'）':'')+'——工具已自动比对撞字撞音，建议你再人手核对一次这个名字'); }
         else if(orderDB&&orderDB[key]){ orderDB[key].forEach(function(fn){fam.push(['关联订单 '+num+' 的新名',fn]);}); detectedOrders.push({num:num,tag:'已关联'}); }
-        else { unresolvedOrders.push(num); detectedOrders.push({num:num,tag:'待补'}); orderProblems.push('⚠ 家人栏/备注有名正言顺订单号「'+num+'」——还查不到它的新名。如果它的名字还没下来，可以先不填（不算问题）；等下来了在上方输入框填上，就会自动重查撞字撞音'); } });
+        else { unresolvedOrders.push(num); detectedOrders.push({num:num,tag:'待补'}); orderProblems.push('🔍 备注/家人栏有名正言顺订单「'+num+'」——请人手去系统查这单的名字下来了没。下来了就在上方输入框填上，系统会自动比对撞字撞音；还没下来先不填，不算问题'); } });
       if(RULES.checkOrderFuzzy){ var seen2={};
         rows.forEach(function(ri){ data[ri].forEach(function(cell){ var c=String(cell==null?'':cell); if(!/[A-Za-z][\s\-_.]+\d/.test(c))return;
           var cl=c.replace(/([A-Za-z]{1,2})((?:[\s\-_.]*\d){6,})/g,function(m,a,b){return a+b.replace(/[\s\-_.]/g,'');});
@@ -667,8 +669,8 @@ function renderActive(){ var host=document.getElementById('files'); host.innerHT
   var unres={}; res.forEach(function(r){ (r.unresolvedOrders||[]).forEach(function(num){ var k=num.toUpperCase(); (unres[k]||(unres[k]=[])).push(r.disp||('序'+r.sid)); }); });
   var ukeys=Object.keys(unres);
   var html='<div class="summary"><span class="big">'+esc(x.name)+'</span><span>共 '+res.length+' 位学员</span><span class="pill '+(nbad?'bad':'ok')+'">'+(nbad?nbad+' 位有问题':'全部通过')+'</span></div>';
-  if(ukeys.length){ var rowsU=ukeys.map(function(k){ return '<div class="urow"><span class="onum">订单 '+esc(k)+'</span><span class="who">被 '+esc(unres[k].join('、'))+' 引用</span><input class="oinput" data-num="'+esc(k)+'" placeholder="名字下来了再填（两个用逗号分开）"></div>'; }).join('');
-    html+='<div class="unresbox"><div class="uhead">这些订单号还查不到新名（名字还没下来就先不填，不算问题）：</div>'+rowsU+'<button class="btn" id="applyOrders" style="margin-top:8px">加入并重新检查</button></div>'; }
+  if(ukeys.length){ var rowsU=ukeys.map(function(k){ return '<div class="urow"><span class="onum">订单 '+esc(k)+'</span><span class="who">被 '+esc(unres[k].join('、'))+' 引用</span><input class="oinput" data-num="'+esc(k)+'" placeholder="查到名字就填这里（两个新名用逗号分开）"></div>'; }).join('');
+    html+='<div class="unresbox"><div class="uhead">📋 要人手查的订单（备注提到的名正言顺订单，请去系统看名字下来了没）<br><span style="font-weight:400;color:var(--muted);font-size:12px">下来了 → 填进来 → 按「加入并重新检查」，系统就会比对撞字撞音；还没下来 → 先不填，不算问题</span></div>'+rowsU+'<button class="btn" id="applyOrders" style="margin-top:8px">加入并重新检查</button></div>'; }
   if(sortProblems)res.sort(function(a,b){return (b.problem?1:0)-(a.problem?1:0);});
   html+='<div class="cards">';
   res.forEach(function(r){
@@ -682,7 +684,12 @@ function renderActive(){ var host=document.getElementById('files'); host.innerHT
       html+='<div class="scard collapsed" data-sid="'+sid+'" data-pass="1">'+
         '<div class="crow"><span class="sid">序'+sid+'</span><span class="who">'+esc(r.disp||'')+'</span>'+
         '<span class="crow-nm">'+r.rows.map(function(rw){return esc(rw.neu);}).join(' ／ ')+'</span>'+
-        '<span class="sp"></span>'+((r.detectedOrders&&r.detectedOrders.filter(function(o){return o.tag!=='本人';}).length)?'<span class="crow-ord" title="有关联订单，点开人手核对">📎 关联订单待核</span>':'')+'<span class="crow-ok">✓ 通过</span>'+
+        '<span class="sp"></span>'+(function(){ var ds=(r.detectedOrders||[]).filter(function(o){return o.tag!=='本人';}); if(!ds.length)return '';
+          var pend=ds.filter(function(o){return o.tag.indexOf('待补')>=0;}), lnk=ds.filter(function(o){return o.tag.indexOf('已关联')>=0;});
+          var out='';
+          if(pend.length)out+='<span class="crow-ord pend" title="备注提到的名正言顺订单，请人手去查名字下来了没">🔍 要查订单 '+pend.length+'</span>';
+          if(lnk.length)out+='<span class="crow-ord lnk" title="这张订单的名字在这批文件里找到了，已自动比对撞字撞音">🔗 已比对 '+lnk.length+'</span>';
+          return out; })()+'<span class="crow-ok">✓ 通过</span>'+
         ' <label class="revw'+(r.reviewed?' on':'')+'" onclick="event.stopPropagation()"><input type="checkbox" class="rvchk" data-sid="'+sid+'" '+(r.reviewed?'checked':'')+'> 已复核</label>'+
         '<span class="sid">▾ 点开看</span></div></div>';
       return;
