@@ -411,8 +411,13 @@ function extractNoteNames(text, own, exclude){ var s=String(text||''); var t=s.i
     if(NAME_STOP[name]||exclude[name]||seen[name])continue; seen[name]=1; out.push(name); } return out; }
 
 function avoidChars(text){ var s=String(text||''),out={}; var stop='字这那的，。；,;！!？?和及与跟还出现样同名也很都是了的';
-  RULES.AVOID_KW.forEach(function(kw){ var idx=0; while((idx=s.indexOf(kw,idx))>=0){ var seg=s.slice(idx+kw.length,idx+kw.length+10); seg=seg.replace(/^[用：:\s「『"\u2018\u201c（(]+/,'');
-    for(var i=0;i<seg.length&&i<2;i++){ var ch=seg[i]; if(ch>='\u4e00'&&ch<='\u9fff'&&stop.indexOf(ch)<0)out[ch]=1; else break; } idx+=kw.length; } }); return out; }
+  RULES.AVOID_KW.forEach(function(kw){ var idx=0; while((idx=s.indexOf(kw,idx))>=0){ var rest=s.slice(idx+kw.length);
+    var lead=(rest.match(/^[用要：:\s]*/)||[''])[0].length; var seg=rest.slice(lead);
+    var qm=seg.match(/^[\u300c\u300e"\u2018\u201c\uff08(]\s*([\u4e00-\u9fff]{1,3})\s*[\u300d\u300f"\u2019\u201d\uff09)]/);
+    if(qm){ Array.from(qm[1]).forEach(function(c){ if(stop.indexOf(c)<0)out[c]=1; }); idx+=kw.length; continue; }
+    var xm=seg.match(/^([\u4e00-\u9fff]{1,3})字/);
+    if(xm){ Array.from(xm[1]).forEach(function(c){ if(stop.indexOf(c)<0)out[c]=1; }); idx+=kw.length; continue; }
+    idx+=kw.length; } }); return out; }
 
 var INSTRUCT_RE=/不同音|不同字|同音|同字|不能同|不可同|不要同|相同|一樣|一样|不撞|別撞|别撞|不重複|不重复|不要和|不能和|不可和|要避開|要避开|避開|避开|不要跟|家人|親人|亲人/;
 function looksLikeInstruction(s){ return INSTRUCT_RE.test(String(s||'')); }
