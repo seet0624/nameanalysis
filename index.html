@@ -120,7 +120,16 @@
   .urow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
   .urow .onum{font-weight:600;font-size:13px;min-width:150px}
   .urow .who{color:var(--muted);font-size:12px;min-width:120px}
-  .urow .oinput{flex:1;min-width:200px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-family:inherit;font-size:13px}
+  .urow .unresbox.calm{border-color:var(--line);background:rgba(255,255,255,.02)}
+  .unresbox.calm .uhead{color:var(--muted)}
+  .refsline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:0 0 14px}
+  .urow{align-items:center}
+  .ordline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0}
+  .ofill{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);font-size:13px}
+  .ofill:focus{outline:none;border-color:var(--gold)}
+  .ostat{font-size:11px;border-radius:7px;padding:3px 9px;border:1px solid;white-space:nowrap} .ostat.ok{color:var(--ok);border-color:var(--ok)} .ostat.pend{color:var(--warn);border-color:var(--warn)}
+  .manual .mcode{flex:0 0 240px} .manual .mnames{flex:1} .manual input{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--ink)}
+  .oinput{flex:1;min-width:200px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-family:inherit;font-size:13px}
   .pop{position:fixed;z-index:80;background:var(--panel2);border:1px solid var(--gold);border-radius:12px;padding:12px 14px;box-shadow:0 12px 40px rgba(0,0,0,.4);max-width:290px;display:none}
   .pop h4{margin:0 0 6px;font-size:20px}
   .pop .row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:5px 0;font-size:13px;color:var(--muted)}
@@ -439,7 +448,7 @@ function noteNeedsEyes(text){ var t=String(text==null?'':text); for(var i=0;i<RU
 function toTradName(neu){ var a=Array.from(neu); if(a.length<=1)return neu; return a[0]+a.slice(1).map(function(c){return S2T[c]||c;}).join(''); }
 
 function locateHeader(data){ var hr=-1; for(var i=0;i<Math.min(data.length,20);i++){ var row=data[i].map(function(x){return String(x==null?'':x).trim();}); if(row.indexOf('新名')>=0&&row.indexOf('新名拼音')>=0){hr=i;break;} } if(hr<0)return null; return {hr:hr,header:data[hr].map(function(x){return String(x==null?'':x).trim();})}; }
-function colsFrom(header){ function col(n){return header.indexOf(n);} var status=-1; header.forEach(function(h,i){ if(status<0&&/状态备注|订单状态|狀態備註|訂單狀態/.test(String(h)))status=i; }); return {seq:col('序号'),user:col('使用人姓名'),order:col('订单编号'),surname:col('新名字姓氏'),father:col('父亲名字'),mother:col('母亲名字'),sib:col('兄弟姐妹'),kids:col('子女'),taboo:col('禁忌字'),neu:col('新名'),py:col('新名拼音'),disp:col('名册展示'),note1:col('备注'),note2:col('总备注'),status:status,zod:col('生肖')}; }
+function colsFrom(header){ function col(n){return header.indexOf(n);} var status=-1; header.forEach(function(h,i){ if(status<0&&/状态备注|订单状态|狀態備註|訂單狀態/.test(String(h)))status=i; }); return {seq:col('序号'),user:col('使用人姓名'),order:col('订单编号'),surname:col('新名字姓氏'),father:col('父亲名字'),mother:col('母亲名字'),sib:col('兄弟姐妹'),kids:col('子女'),taboo:col('禁忌字'),neu:col('新名'),py:col('新名拼音'),disp:col('名册展示'),note1:col('备注'),note2:col('总备注'),status:status,zod:col('生肖'),member:(col('会员编号')>=0?col('会员编号'):(col('學員編號')>=0?col('學員編號'):col('学员编号')))}; }
 function groupRows(data,hr,cNeu,cSeq){ var g=[]; for(var r=hr+1;r<data.length;r++){ if(String(data[r][cNeu]==null?'':data[r][cNeu]).trim()==='')continue; var sid=data[r][cSeq];
   if(sid!==''&&sid!=null&&(g.length===0||g[g.length-1].sid!==sid))g.push({sid:sid,rows:[r]}); else if(g.length>0)g[g.length-1].rows.push(r); else g.push({sid:sid,rows:[r]}); } return g; }
 var ORDER_RE=/[A-Za-z]{1,2}\d{6,}|2\d{7,}|\d{12,}/g;
@@ -448,11 +457,11 @@ var ORDER_RE=/[A-Za-z]{1,2}\d{6,}|2\d{7,}|\d{12,}/g;
 function normWidth(s){ return String(s==null?'':s).replace(/[\uFF10-\uFF19\uFF21-\uFF3A\uFF41-\uFF5A]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0);}); }
 function parseFile(data){ try{ data=data.map(function(row){ return (row||[]).map(function(c){ return (typeof c==='string')?normWidth(c):c; }); }); }catch(e){}
   var loc=locateHeader(data); if(!loc)return null; var hr=loc.hr,header=loc.header,cols=colsFrom(header);
-  var orderCols=[]; header.forEach(function(h,i){ if(/订单|编号|訂單|單號|单号/.test(String(h)))orderCols.push(i); });
+  var orderCols=[]; header.forEach(function(h,i){ var hs=String(h); if(/订单|訂單|编号|編號|單號|单号/.test(hs) && !/备注|備註|状态|狀態|狀況|状況|说明|說明|要求|问题|問題/.test(hs))orderCols.push(i); });
   var groups=groupRows(data,hr,cols.neu,cols.seq);
   groups.forEach(function(grp){ var rows=grp.rows,r0=data[rows[0]]; var ord='';
     for(var t=0;t<rows.length;t++){var o=String(data[rows[t]][cols.order]==null?'':data[rows[t]][cols.order]).trim();if(o){ord=o;break;}}
-    grp._order=ord; grp._disp=String(r0[cols.user]==null?'':r0[cols.user]).trim();
+    grp._order=ord; grp._member=(cols.member>=0?String(r0[cols.member]==null?'':r0[cols.member]).trim():''); grp._disp=String(r0[cols.user]==null?'':r0[cols.user]).trim();
     grp._givens=rows.map(function(ri){return Array.from(String(data[ri][cols.neu]==null?'':data[ri][cols.neu]).trim()).slice(1).join('');});
     grp._fullnames=rows.map(function(ri){return String(data[ri][cols.neu]==null?'':data[ri][cols.neu]).trim();});
     grp._fam=familyMembers(r0,cols);
@@ -474,6 +483,7 @@ var window_reuseMap=null;
 function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.groups,orderCols=pf.orderCols;
   window_reuseMap={}; if(orderDB){ for(var od in orderDB){ (orderDB[od]||[]).forEach(function(nm){ if(!nm)return; (window_reuseMap[nm]||(window_reuseMap[nm]=[])).push(od.toUpperCase()); }); } }
   var orderIndex={}; groups.forEach(function(grp){ if(grp._order)orderIndex[grp._order.toUpperCase()]=grp; });
+  var memberIndex={}; groups.forEach(function(grp){ if(grp._member)memberIndex[grp._member.toUpperCase()]=grp; });
   // 同一家人
   var nameToGroups={}; groups.forEach(function(grp){ for(var nm in grp._famNames){(nameToGroups[nm]||(nameToGroups[nm]=[])).push(grp);} });
   groups.forEach(function(grp){ grp._sameFam=[]; var added={}; for(var nm in grp._famNames){ (nameToGroups[nm]||[]).forEach(function(g2){ if(g2===grp)return; var key=g2._disp+'|'+g2._order; if(added[key])return; added[key]=1; g2._givens.forEach(function(gn){if(gn)grp._sameFam.push(['疑似同一家人「'+(g2._disp||'另一学员')+'」（共有家人「'+nm+'」）',gn]);}); }); } });
@@ -491,8 +501,8 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
     var detectedOrders=[]; if(grp._order)detectedOrders.push({num:grp._order,tag:'本人'});
     if(RULES.checkOrder){ var scanText=''; rows.forEach(function(ri){ data[ri].forEach(function(cell){scanText+=' '+String(cell==null?'':cell);}); }); var seen={};
       (scanText.match(ORDER_RE)||[]).forEach(function(num){ var key=num.toUpperCase(); if(ownSet[key]||seen[key])return; seen[key]=1;
-        var rel=orderIndex[key];
-        if(rel){ var relNames=[]; rel._givens.forEach(function(gn){if(gn){fam.push(['关联学员「'+rel._disp+'」('+num+')',gn,false,true]); if(relNames.indexOf(gn)<0)relNames.push(gn);}}); detectedOrders.push({num:num,tag:'已关联 '+rel._disp+(relNames.length?'（'+relNames.join('／')+'）':'')}); orderProblems.push('✓ 订单「'+num+'」对应家人「'+rel._disp+'」'+(relNames.length?'（新名：'+relNames.join('／')+'）':'')+'——工具已自动比对撞字撞音，建议你再人手核对一次这个名字'); }
+        var rel=orderIndex[key]; var viaM=false; if(!rel&&memberIndex[key]){ rel=memberIndex[key]; viaM=true; }
+        if(rel){ var relNames=[]; rel._givens.forEach(function(gn){if(gn){fam.push(['关联学员「'+rel._disp+'」('+num+')',gn,false,true]); if(relNames.indexOf(gn)<0)relNames.push(gn);}}); detectedOrders.push({num:num,tag:'已关联 '+rel._disp+(viaM?'（会员编号）':'')+(relNames.length?'（'+relNames.join('／')+'）':'')}); orderProblems.push('✓ 订单「'+num+'」对应家人「'+rel._disp+'」'+(relNames.length?'（新名：'+relNames.join('／')+'）':'')+'——工具已自动比对撞字撞音，建议你再人手核对一次这个名字'); }
         else if(orderDB&&orderDB[key]){ orderDB[key].forEach(function(fn){fam.push(['关联订单 '+num+' 的新名',fn]);}); detectedOrders.push({num:num,tag:'已关联'}); }
         else { unresolvedOrders.push(num); detectedOrders.push({num:num,tag:'待补'}); orderProblems.push('🔍 备注/家人栏有名正言顺订单「'+num+'」——请人手去系统查这单的名字下来了没。下来了就在上方输入框填上，系统会自动比对撞字撞音；还没下来先不填，不算问题'); } });
       if(RULES.checkOrderFuzzy){ var seen2={};
@@ -564,7 +574,7 @@ if(typeof module!=='undefined')module.exports={parseFile:parseFile,buildOrderDB:
 /*==== state ====*/
 var parsedFiles=[], importedDB={}, activeFile=0;
 var filterMode='all', searchTerm='', sortProblems=true, expandAll=false;
-var openPass={};
+var openPass={}; var showAllRefs=false;
 var undoStack=[], redoStack=[], lang='cn';
 
 /*==== storage ====*/
@@ -668,8 +678,8 @@ function detailHtml(r){ var det=r.rows[0].detail;
   var notesHtml='';
   if(String(det.note1).trim())notesHtml+=parseNotes(det.note1);
   if(String(det.note2).trim())notesHtml+='<div style="margin-top:8px;color:var(--muted);font-size:11px">总备注</div>'+parseNotes(det.note2);
-  var noteSec=notesHtml?'<div class="dsec"><div class="dsec-h">检测到的订单号</div>'+((r.detectedOrders&&r.detectedOrders.length)?r.detectedOrders.map(function(o){ var col=o.tag.indexOf('待补')>=0?'var(--warn)':(o.tag.indexOf('疑似')>=0?'var(--bad)':(o.tag.indexOf('关联')>=0?'var(--ok)':'var(--muted)')); return '<span class="badge b-taboo qsearch" data-q="'+esc(o.num)+'" title="点一下搜这个订单号" style="border-color:'+col+';color:'+col+'">'+hlText(esc(o.num))+' · '+esc(o.tag)+'</span>'; }).join(' '):'<span style="color:var(--muted)">这单没扫到其他订单号</span>')+'</div>'+'<div class="dsec"><div class="dsec-h">命名师备注</div>'+notesHtml+'</div>':'';
-  return '<div class="detail">'+tree+reqHtml+noteSec+'</div>'; }
+  var ordItems=(r.detectedOrders||[]).map(function(o){ var pend=o.tag.indexOf('待补')>=0; var col=pend?'var(--warn)':(o.tag.indexOf('疑似')>=0?'var(--bad)':(o.tag.indexOf('关联')>=0?'var(--ok)':'var(--muted)')); var chip='<span class="badge b-taboo qsearch" data-q="'+esc(o.num)+'" title="点一下搜这个编号" style="border-color:'+col+';color:'+col+'">'+hlText(esc(o.num))+' · '+esc(o.tag)+'</span>'; if(!pend)return '<div class="ordline">'+chip+'</div>'; return '<div class="ordline">'+chip+'<input class="ofill" data-num="'+esc(o.num)+'" placeholder="查到名字就填这里（两个用逗号分开），按 Enter"><button class="iconbtn ofillgo" data-num="'+esc(o.num)+'">加入并重查</button></div>'; }).join('');  var ordSec='<div class="dsec"><div class="dsec-h">检测到的订单 / 会员编号</div>'+(ordItems||'<span style="color:var(--muted)">这单没扫到其他编号</span>')+'</div>';  var noteSec=notesHtml?('<div class="dsec"><div class="dsec-h">命名师备注</div>'+notesHtml+'</div>'):'';
+  return '<div class="detail">'+tree+reqHtml+ordSec+noteSec+'</div>'; }
 
 
 function searchHay(r){
@@ -734,8 +744,7 @@ function renderActive(){ var host=document.getElementById('files'); host.innerHT
   var ukeys=Object.keys(unres);
   var _shown=searchTerm?res.filter(function(rr){return matchSearch(rr,searchTerm);}).length:res.length;
   var html='<div class="summary"><span class="big">'+esc(x.name)+'</span><span>共 '+res.length+' 位学员</span>'+(searchTerm?'<span class="pill '+(_shown?'ok':'bad')+'">搜到 '+_shown+' 位</span>':'')+'<span class="pill '+(nbad?'bad':'ok')+'">'+(nbad?nbad+' 位有问题':'全部通过')+'</span></div>';
-  if(ukeys.length){ var rowsU=ukeys.map(function(k){ return '<div class="urow"><span class="onum">订单 '+esc(k)+'</span><span class="who">被 '+esc(unres[k].join('、'))+' 引用</span><input class="oinput" data-num="'+esc(k)+'" placeholder="查到名字就填这里（两个新名用逗号分开）"></div>'; }).join('');
-    html+='<div class="unresbox"><div class="uhead">📋 要人手查的订单（备注提到的名正言顺订单，请去系统看名字下来了没）<br><span style="font-weight:400;color:var(--muted);font-size:12px">下来了 → 填进来 → 按「加入并重新检查」，系统就会比对撞字撞音；还没下来 → 先不填，不算问题</span></div>'+rowsU+'<button class="btn" id="applyOrders" style="margin-top:8px">加入并重新检查</button></div>'; }
+  { var refs={}; res.forEach(function(r){ (r.detectedOrders||[]).forEach(function(o){ if(o.tag==='本人')return; var k=o.num.toUpperCase(); if(!refs[k])refs[k]={code:o.num,by:[],pend:false,resolved:''}; var who=r.disp||('序'+r.sid); if(refs[k].by.indexOf(who)<0)refs[k].by.push(who); if(o.tag.indexOf('待补')>=0)refs[k].pend=true; else if(o.tag.indexOf('已关联')>=0)refs[k].resolved=o.tag.replace(/^已关联\s*/,''); }); }); var rkeys=Object.keys(refs); var pend=rkeys.filter(function(k){return refs[k].pend&&!refs[k].resolved;}), done=rkeys.filter(function(k){return refs[k].resolved;}); function refRow(k){ var f=refs[k]; var st=f.resolved?('<span class="ostat ok">✓ '+esc(f.resolved)+'</span>'):'<span class="ostat pend">待补</span>';   return '<div class="urow"><span class="onum">'+esc(f.code)+'</span><span class="who">'+esc(f.by.join('、'))+'</span>'+st     +'<input class="oinput" data-num="'+esc(f.code)+'" placeholder="'+(f.resolved?'要改就填这里（可留空）':'查到名字就填这里，按 Enter')+'"></div>'; } if(pend.length||showAllRefs){  html+='<div class="unresbox'+(pend.length?'':' calm')+'">'   +'<div class="uhead">'+(pend.length?('📋 要人手查的编号 '+pend.length+' 个'):'📋 编号核对')+' <span style="font-weight:400;color:var(--muted);font-size:12px">查到名字填进去 → 按 Enter 或「加入并重新检查」</span>'   +(done.length?'<button class="iconbtn" id="toggleRefs" style="float:right">'+(showAllRefs?'收起已关联':'看已关联 '+done.length+' 个')+'</button>':'')+'</div>'   +pend.map(refRow).join('')+(showAllRefs?done.map(refRow).join(''):'')   +'<div class="urow manual"><input class="mcode" placeholder="其它订单号 或 会员编号"><input class="mnames" placeholder="它的新名（两个用逗号分开）"></div>'   +'<button class="btn" id="applyOrders" style="margin-top:8px">加入并重新检查</button></div>'; } else if(done.length){ html+='<div class="refsline">✓ '+done.length+' 个编号已自动关联并比对（'+esc(done.slice(0,3).join('、'))+(done.length>3?' 等':'')+'）<button class="iconbtn" id="toggleRefs">要人手填/核对</button></div>'; } }
   if(sortProblems)res.sort(function(a,b){return (b.problem?1:0)-(a.problem?1:0);});
   html+='<div class="cards">';
   res.forEach(function(r){
@@ -774,6 +783,9 @@ function renderActive(){ var host=document.getElementById('files'); host.innerHT
   host.querySelectorAll('select.verdict').forEach(function(sel){ sel.onchange=function(){ changeVerdict(sel.getAttribute('data-sid'), sel.value); }; });
   host.querySelectorAll('.han').forEach(function(el){ el.onclick=function(ev){ ev.stopPropagation(); showPop(ev, el.getAttribute('data-ch')); }; });
   host.querySelectorAll('.nspk').forEach(function(el){ el.onclick=function(){ speak(el.getAttribute('data-say')); }; });
+  function _fillOrder(num, val){ var names=String(val||'').trim().split(/[\s,，、;；\/]+/).filter(Boolean); if(!names.length){ alert('请先填上这个编号对应的新名。'); return; } importedDB[num]=(importedDB[num]||[]).concat(names); rebuild(); }
+  host.querySelectorAll('.ofillgo').forEach(function(b){ b.onclick=function(ev){ ev.stopPropagation(); var num=b.getAttribute('data-num');   var inp=b.parentNode.querySelector('.ofill'); _fillOrder(num, inp?inp.value:''); }; });
+  host.querySelectorAll('.ofill').forEach(function(inp){ inp.onclick=function(ev){ ev.stopPropagation(); };   inp.onkeydown=function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); ev.stopPropagation(); _fillOrder(inp.getAttribute('data-num'), inp.value); } }; });
   host.querySelectorAll('.qsearch').forEach(function(el){ el.onclick=function(ev){ if(ev.target.closest && ev.target.closest('.han'))return; ev.stopPropagation(); doSearch(el.getAttribute('data-q')); }; });
   host.querySelectorAll('.scard.collapsed').forEach(function(el){ el.onclick=function(ev){ if(ev.target.closest('.revw'))return; openPass[el.getAttribute('data-sid')]=1; renderActive(); }; });
   host.querySelectorAll('.cls').forEach(function(el){ el.onclick=function(){ delete openPass[el.getAttribute('data-sid')]; renderActive(); }; });
@@ -784,7 +796,9 @@ function renderActive(){ var host=document.getElementById('files'); host.innerHT
     var nm=box.querySelector('.sbname').value.trim(); var py=box.querySelector('.sbpy').value.trim();
     var r=x.audit.results.filter(function(rr){return String(rr.sid)===sid;})[0]; var out=recheck(r,nm,py);
     box.querySelector('.res').innerHTML = nm? (out.length?out.map(function(o){return '<div class="m">• '+esc(o)+'</div>';}).join(''):'<div style="color:var(--ok)">✓ 没撞、没禁忌</div>') : '<span style="color:var(--muted)">先输入一个名字</span>'; }; });
-  var ab=host.querySelector('#applyOrders'); if(ab)ab.onclick=function(){ var any=false; host.querySelectorAll('.oinput').forEach(function(inp){ var num=inp.getAttribute('data-num'),v=inp.value.trim(); if(v){ var names=v.split(/[\s,，、;；]+/).filter(Boolean); if(names.length){ importedDB[num]=(importedDB[num]||[]).concat(names); any=true; } } }); if(any)rebuild(); else alert('请先填上订单的新名。'); };
+  var tr=host.querySelector('#toggleRefs'); if(tr)tr.onclick=function(){ showAllRefs=!showAllRefs; renderActive(); };
+  host.querySelectorAll('.oinput,.mnames').forEach(function(inp){ inp.onkeydown=function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); var b=host.querySelector('#applyOrders'); if(b)b.click(); } }; });
+  var ab=host.querySelector('#applyOrders'); if(ab)ab.onclick=function(){ var any=false; host.querySelectorAll('.oinput').forEach(function(inp){ var num=inp.getAttribute('data-num'),v=inp.value.trim(); if(v){ var names=v.split(/[\s,，、;；]+/).filter(Boolean); if(names.length){ importedDB[num]=(importedDB[num]||[]).concat(names); any=true; } } }); var mc=host.querySelector('.mcode'), mn=host.querySelector('.mnames'); if(mc&&mn&&mc.value.trim()&&mn.value.trim()){ var code=mc.value.trim().toUpperCase(); var nm=mn.value.trim().split(/[\s,，、;；]+/).filter(Boolean); if(nm.length){ importedDB[code]=(importedDB[code]||[]).concat(nm); any=true; } } if(any)rebuild(); else alert('请先填上订单/会员编号对应的新名。'); };
 }
 
 /*==== sandbox recheck ====*/
