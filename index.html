@@ -375,7 +375,7 @@ var RULES = {
     '度':['du','duo'],'冯':['feng','ping'],'馮':['feng','ping'],'员':['yuan','yun'],'員':['yuan','yun'],'缪':['miao','mou']},
   AVOID_KW: ['不想','不要','不用','别用','勿用','不能用','不喜欢','忌讳'],
   EYE_KEYWORDS: ['朋友','避免','同名','相同'],
-  checkClash:true, checkHomo:true, checkTaboo:true, checkTrad:true, checkOrder:true, checkSameFamily:true, checkPoly:true, checkBadHomo:true, checkZodiac:true, checkTabooHomo:true, checkYue:true, checkReuse:true, checkOrderFuzzy:true,
+  checkClash:true, checkHomo:true, checkTaboo:true, checkTrad:true, checkOrder:true, checkSameFamily:true, checkPoly:true, checkBadHomo:true, checkZodiac:true, checkTabooHomo:true, checkYue:true, checkReuse:true, checkOrderFuzzy:true, checkPyMatch:true,
   YUE_BAD:{'sei':'粤语「死/四」音（不吉）','sup':'','baai':'粤语「敗/败」音（不吉）'}
 };
 var COMPOUND={}; ['欧阳','歐陽','司马','司馬','上官','诸葛','諸葛','东方','東方','夏侯','尉迟','尉遲','皇甫','令狐','慕容','长孙','長孫','宇文','司徒','司空','轩辕','軒轅','澹台','澹臺','公孙','公孫','万俟','萬俟','闻人','聞人','钟离','鍾離','南宫','南宮','独孤','獨孤','呼延','端木','拓跋','纳兰','納蘭','西门','西門','东郭','東郭'].forEach(function(c){COMPOUND[c]=1;});
@@ -521,6 +521,27 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
       if(syl.length===given.length+1){ syl=syl.slice(1); toneTokens=toneTokens.slice(1); }
       var pyOk=(given.length>0&&syl.length===given.length);
       var msgs=[],warns=[],hits=[];
+      var pyFixed='', pyBad=false;
+      if(pyOk&&RULES.checkPyMatch!==false){
+        function _ok(ch,s){ var rs=charSyllables(ch); return (!rs||!rs.length)?true:(rs.indexOf(s)>=0); }
+        function _fits(arr){ for(var i=0;i<given.length;i++){ if(!_ok(given[i],arr[i]))return false; } return true; }
+        if(!_fits(syl)){
+          var found=null, foundT=null;
+          var idxs=[]; for(var i2=0;i2<given.length;i2++)idxs.push(i2);
+          function _perm(cur,left){ if(found)return; if(!left.length){ var cand=cur.map(function(j){return syl[j];});
+              if(_fits(cand)){ found=cand; foundT=cur.map(function(j){return toneTokens[j];}); } return; }
+            for(var k=0;k<left.length&&!found;k++){ var nl=left.slice(); var t=nl.splice(k,1)[0]; _perm(cur.concat([t]), nl); } }
+          if(given.length<=4)_perm([], idxs);
+          if(found){ syl=found; toneTokens=foundT; pyFixed=aa.trim();
+            warns.push('✏️ 技术单拼音顺序不对：「'+neu+'」技术单写「'+aa.trim()+'」，正确顺序应是「'+found.join(' ')+'」——已自动对正检查，请通知改技术单');
+          } else {
+            var auto=given.map(function(ch){ var rs=charSyllables(ch); return rs&&rs.length?rs[0]:''; });
+            if(auto.every(Boolean)){ syl=auto; toneTokens=auto.slice(); pyBad=true;
+              warns.push('✏️ 技术单拼音写错：「'+neu+'」应该读「'+auto.join(' ')+'」，技术单写的是「'+aa.trim()+'」——已用正确读音检查，请通知改技术单');
+            } else { pyOk=false; warns.push('✏️ 技术单拼音和名字对不上（写：'+aa.trim()+'），有冷僻字查不到读音，已跳过谐音检查，请人手核对技术单拼音'); }
+          }
+        }
+      }
       function addHit(kind,ni,fc,p){ hits.push({kind:kind,ni:ni,fc:fc,fname:p?p[1]:'',member:p?p[0]:'',soft:p?!!p[2]:false}); }
       if(RULES.checkClash)given.forEach(function(ch,idx){ var nch=norm(ch); fam.forEach(function(p){ var cmp=fg(p); for(var c=0;c<cmp.length;c++){ if(norm(cmp[c])===nch){ var m='新名（'+neu+'）和'+p[0]+'（'+p[1]+'）撞字（'+ch+'）'; if(p[2])warns.push('⚠ '+m+'，请确认是否同一家人'); else {msgs.push(m); addHit('撞字',idx+1,cmp[c],p);} break; } } }); });
       if(RULES.checkHomo&&pyOk)given.forEach(function(ch,idx){ var si=syl[idx],nch=norm(ch);
@@ -528,7 +549,7 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
           if(charSyllables(fc).indexOf(si)>=0){ var tA=toneOf(ch), tB=toneOf(fc); var same=(tA&&tB&&tA===tB); var lvl=same?'完全同音同调':'同音不同调'; var hm='新名（'+neu+'）和'+p[0]+'（'+p[1]+'）撞谐音〔'+lvl+'〕（'+ch+'('+si+(tA?tA:'')+') ~ '+fc+'('+si+(tB?tB:'')+')）'; if(p[2])warns.push('⚠ '+hm+'，请确认是否同一家人'); else if(same){ msgs.push(hm); addHit('撞音',idx+1,fc,p); } else { warns.push('⚠ '+hm+'（声调不同，通常较轻，请判断）'); addHit('撞音软',idx+1,fc,p); } continue; }
           if(RULES.checkPoly){ var poly=RULES.POLY[fc]||RULES.POLY[norm(fc)]; if(poly&&poly.indexOf(si)>=0)warns.push('⚠ 多音字：'+p[0]+'「'+p[1]+'」的「'+fc+'」也可能读「'+si+'」，那样和新名「'+ch+'」撞音，请用耳朵确认'); } } });
         if(RULES.checkPoly){ var ps=RULES.POLY[ch]||RULES.POLY[norm(ch)]; if(ps)ps.forEach(function(alt){ if(alt===si)return; fam.forEach(function(p){ var cmp=fg(p); for(var c=0;c<cmp.length;c++){ var fc=cmp[c]; if(norm(fc)===nch)continue; if(charSyllables(fc).indexOf(alt)>=0)warns.push('⚠ 多音字：新名「'+ch+'」也可能读「'+alt+'」，那样和'+p[0]+'「'+p[1]+'」的「'+fc+'」撞音，请确认'); } }); }); } });
-      else if(RULES.checkHomo)warns.push('⚠ 新名拼音空白或与字数对不上，谐音没查到');
+      else if(RULES.checkHomo)warns.push('✏️ 技术单拼音有问题：「'+neu+'」有 '+given.length+' 个字，但拼音写了 '+syl.length+' 个（'+(aa.trim()||'空白')+'）——谐音没查到，请核对技术单');
       if(RULES.checkHomo&&pyOk){ var newSeq=syl.join('-'); fam.forEach(function(p){ var cmp=fg(p); if(cmp.length===syl.length&&cmp.length>=2){ var ok=true,fs=[]; for(var c=0;c<cmp.length;c++){ var s=charSyllables(cmp[c]); if(!s.length){ok=false;break;} fs.push(s[0]); } if(ok&&fs.join('-')===newSeq){ var wm='⚠ 整个名字连读和'+p[0]+'（'+p[1]+'）读音几乎一样（'+syl.join(' ')+'），请留意'; if(warns.indexOf(wm)<0)warns.push(wm); } } }); }
       if(RULES.checkTaboo){ given.forEach(function(ch,idx){ if(tb.single[norm(ch)]){msgs.push('新名（'+neu+'）用了禁忌/不想用的字（'+ch+'）'); addHit('禁忌',idx+1,ch,null);} }); if(tb.combos.indexOf(given.join(''))>=0)msgs.push('新名（'+neu+'）是禁忌名（'+given.join('')+'）'); }
       if(RULES.checkTabooHomo&&pyOk){ var fsyl={}; for(var fc0 in tb.single){ charSyllables(fc0).forEach(function(s){ if(!fsyl[s])fsyl[s]=fc0; }); } given.forEach(function(ch,idx){ var si=syl[idx]; if(!si)return;   if((tb.avoidSyl||{})[si]&&!tb.single[norm(ch)]){ msgs.push('新名（'+neu+'）用了客户明说不要的读音「'+si+'」（'+ch+'）'); addHit('禁音',idx+1,ch,null); return; }   if(tb.single[norm(ch)])return; if(fsyl[si]&&norm(ch)!==norm(fsyl[si])){ warns.push('⚠ 新名「'+ch+'」('+si+') 和禁忌字「'+fsyl[si]+'」同音——客户可能不要这个读音，请确认'); addHit('禁音',idx+1,ch,null); } }); }
@@ -636,12 +657,12 @@ function renderTabs(){ var t=document.getElementById('fileTabs'); t.innerHTML=''
 
 /*==== dashboard + progress ====*/
 function renderDashboard(){ var d=document.getElementById('dash'); var prog=document.getElementById('progress');
-  var totS=0,totBad=0,totRev=0,c={撞字:0,撞音:0,禁忌:0,繁体:0,状态:0,待补:0,不雅:0};
+  var totS=0,totBad=0,totRev=0,c={撞字:0,撞音:0,禁忌:0,繁体:0,状态:0,待补:0,不雅:0,拼音:0};
   parsedFiles.forEach(function(x){ x.audit.results.forEach(function(r){ totS++; if(r.problem)totBad++;
     if(r.reviewed)totRev++;
-    r.rows.forEach(function(rw){ rw.hits.forEach(function(h){ if(h.kind==='撞字')c.撞字++; else if(h.kind==='撞音')c.撞音++; else if(h.kind==='禁忌')c.禁忌++; else if(h.kind==='简体')c.繁体++; }); rw.msgs.forEach(function(m){ if(m.indexOf('订单状态备注')>=0)c.状态++; if(m.indexOf('谐音不雅')>=0)c.不雅++; }); });
+    r.rows.forEach(function(rw){ rw.hits.forEach(function(h){ if(h.kind==='撞字')c.撞字++; else if(h.kind==='撞音')c.撞音++; else if(h.kind==='禁忌')c.禁忌++; else if(h.kind==='简体')c.繁体++; }); rw.msgs.forEach(function(m){ if(m.indexOf('订单状态备注')>=0)c.状态++; if(m.indexOf('谐音不雅')>=0)c.不雅++; }); rw.warns.forEach(function(w){ if(w.indexOf('技术单拼音')>=0)c.拼音++; }); });
     c.待补+=((r.unresolvedOrders||[]).length); }); });
-  var cards=[['学员',totS,''],['有问题',totBad,'bad'],['通过',totS-totBad,'ok'],['已复核',totRev+'/'+totS,'ok'],['撞字',c.撞字,''],['撞音',c.撞音,''],['不雅谐音',c.不雅,''],['禁忌',c.禁忌,''],['繁体',c.繁体,''],['状态备注',c.状态,''],['待补订单',c.待补,'']];
+  var cards=[['学员',totS,''],['有问题',totBad,'bad'],['通过',totS-totBad,'ok'],['已复核',totRev+'/'+totS,'ok'],['撞字',c.撞字,''],['撞音',c.撞音,''],['不雅谐音',c.不雅,''],['拼音写错',c.拼音,''],['禁忌',c.禁忌,''],['繁体',c.繁体,''],['状态备注',c.状态,''],['待补订单',c.待补,'']];
   d.innerHTML=cards.map(function(k){return '<div class="dcard '+k[2]+'"><div class="n">'+k[1]+'</div><div class="l">'+k[0]+'</div></div>';}).join('');
   var revp=totS?Math.round(totRev/totS*100):0;
   prog.innerHTML='<div class="pok" style="width:'+revp+'%" title="已复核 '+totRev+'/'+totS+'"></div>'; prog.title='已复核 '+totRev+'/'+totS+'（'+revp+'%）'; }
@@ -897,14 +918,14 @@ function importSession(){ var inp=document.createElement('input'); inp.type='fil
 
 
 function openQuality(){ if(!parsedFiles.length){ alert('先载入文件'); return; }
-  var types={'撞字':0,'撞音(同调)':0,'撞音(异调)':0,'禁忌字':0,'禁忌/不要的音':0,'不雅谐音':0,'粤语谐音':0,'繁体':0,'状态备注':0,'历史重名':0,'调换顺序':0,'待补订单':0};
+  var types={'撞字':0,'撞音(同调)':0,'撞音(异调)':0,'禁忌字':0,'禁忌/不要的音':0,'不雅谐音':0,'粤语谐音':0,'繁体':0,'状态备注':0,'历史重名':0,'调换顺序':0,'待补订单':0,'技术单拼音写错':0};
   var perFile=[];
   var totS=0,totBad=0,totRev=0;
   parsedFiles.forEach(function(x){ var fb=0; x.audit.results.forEach(function(r){ totS++; if(r.problem){totBad++;fb++;} if(r.reviewed)totRev++;
     r.rows.forEach(function(rw){
       rw.hits.forEach(function(h){ if(h.kind==='撞字')types['撞字']++; else if(h.kind==='撞音')types['撞音(同调)']++; else if(h.kind==='撞音软')types['撞音(异调)']++; else if(h.kind==='禁忌')types['禁忌字']++; else if(h.kind==='禁音')types['禁忌/不要的音']++; else if(h.kind==='简体')types['繁体']++; });
       rw.msgs.forEach(function(m){ if(m.indexOf('订单状态备注')>=0)types['状态备注']++; if(m.indexOf('谐音不雅')>=0)types['不雅谐音']++; if(m.indexOf('调换顺序')>=0)types['调换顺序']++; });
-      rw.warns.forEach(function(w){ if(w.indexOf('粤语')>=0)types['粤语谐音']++; if(w.indexOf('历史重名')>=0)types['历史重名']++; });
+      rw.warns.forEach(function(w){ if(w.indexOf('粤语')>=0)types['粤语谐音']++; if(w.indexOf('历史重名')>=0)types['历史重名']++; if(w.indexOf('技术单拼音')>=0)types['技术单拼音写错']++; });
     });
     types['待补订单']+=((r.unresolvedOrders||[]).length); });
     perFile.push({name:x.name,total:x.audit.results.length,bad:fb}); });
@@ -920,7 +941,7 @@ function openQuality(){ if(!parsedFiles.length){ alert('先载入文件'); retur
 }
 
 /*==== settings ====*/
-function buildSettings(){ var t=document.getElementById('toggles'); var defs=[['checkClash','撞字'],['checkHomo','撞谐音'],['checkPoly','多音字提醒'],['checkTaboo','禁忌字'],['checkTrad','繁体检查'],['checkOrder','订单号检查'],['checkSameFamily','一家人/重名'],['checkBadHomo','不雅谐音'],['checkZodiac','生肖部首'],['checkTabooHomo','禁忌字谐音'],['checkYue','粤语谐音'],['checkReuse','历史重名'],['checkOrderFuzzy','订单号去空格容错']];
+function buildSettings(){ var t=document.getElementById('toggles'); var defs=[['checkClash','撞字'],['checkHomo','撞谐音'],['checkPoly','多音字提醒'],['checkTaboo','禁忌字'],['checkTrad','繁体检查'],['checkOrder','订单号检查'],['checkSameFamily','一家人/重名'],['checkBadHomo','不雅谐音'],['checkZodiac','生肖部首'],['checkTabooHomo','禁忌字谐音'],['checkYue','粤语谐音'],['checkReuse','历史重名'],['checkOrderFuzzy','订单号去空格容错'],['checkPyMatch','拼音写错检查']];
   t.innerHTML=defs.map(function(d){ return '<label><input type="checkbox" data-k="'+d[0]+'" '+(RULES[d[0]]?'checked':'')+'> '+d[1]+'</label>'; }).join('');
   var lines=[]; for(var k in RULES.POLY){ if(typeof S2T!=='undefined'&&S2T[k]&&S2T[k]!==k)continue; lines.push(k+':'+RULES.POLY[k].join(',')); } document.getElementById('polyEdit').value=lines.join('\n'); var yl=[]; for(var yk in (RULES.YUE_BAD||{})){ yl.push(yk+':'+(RULES.YUE_BAD[yk]||'')); } var ye=document.getElementById('yueEdit'); if(ye)ye.value=yl.join('\n'); }
 function applySettings(){ document.querySelectorAll('#toggles input').forEach(function(c){ RULES[c.getAttribute('data-k')]=c.checked; });
