@@ -442,7 +442,10 @@ function tabooInfo(r0, cols){ var single={},combos=[],notes=[]; var s=String(r0[
   [cols.note1,cols.note2].forEach(function(ci){ if(ci==null||ci<0)return; var v=String(r0[ci]==null?'':r0[ci]);
     if(v.indexOf('禁忌')>=0){ var after=v.indexOf('禁忌字')>=0?v.split('禁忌字')[1]:v.split('禁忌')[1]; after=(after||'').replace(/^[：:\s]+/,'');
       after.split(/[，,、；;\s]+/).forEach(function(tok){ var t=cjkOnly(tok); if(t.length>=2&&t.length<=3&&!looksLikeInstruction(t))combos.push(t); else if(t.length===1)single[norm(t)]=1; }); } });
-  var avoidSyl={}; [String(r0[cols.taboo]==null?'':r0[cols.taboo])].concat([cols.note1,cols.note2].map(function(ci){return ci>=0?String(r0[ci]==null?'':r0[ci]):'';})).forEach(function(t){ var a=extractAvoidSyl(t); for(var k in a.syl)avoidSyl[k]=1; for(var c in a.chars)single[norm(c)]=1; }); return {single:single,combos:combos,notes:notes,avoidSyl:avoidSyl}; }
+  var avoidSyl={};
+  (function(){ var ts=String(r0[cols.taboo]==null?'':r0[cols.taboo]).toLowerCase();
+    (ts.match(/[a-z]+[0-9]?/g)||[]).forEach(function(t){ var base=t.replace(/[0-9]/g,''); if(base.length>=1&&PY[base])avoidSyl[base]=1; }); })();
+  [String(r0[cols.taboo]==null?'':r0[cols.taboo])].concat([cols.note1,cols.note2].map(function(ci){return ci>=0?String(r0[ci]==null?'':r0[ci]):'';})).forEach(function(t){ var a=extractAvoidSyl(t); for(var k in a.syl)avoidSyl[k]=1; for(var c in a.chars)single[norm(c)]=1; }); return {single:single,combos:combos,notes:notes,avoidSyl:avoidSyl}; }
 
 function noteNeedsEyes(text){ var t=String(text==null?'':text); for(var i=0;i<RULES.EYE_KEYWORDS.length;i++)if(t.indexOf(RULES.EYE_KEYWORDS[i])>=0)return true; return false; }
 function toTradName(neu){ var a=Array.from(neu); if(a.length<=1)return neu; return a[0]+a.slice(1).map(function(c){return S2T[c]||c;}).join(''); }
@@ -521,7 +524,7 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
       if(syl.length===given.length+1){ syl=syl.slice(1); toneTokens=toneTokens.slice(1); }
       var pyOk=(given.length>0&&syl.length===given.length);
       var msgs=[],warns=[],hits=[];
-      var pyFixed='', pyBad=false;
+      var pyFixed='', pyBad=false; var rawSyl=syl.slice();
       if(pyOk&&RULES.checkPyMatch!==false){
         function _ok(ch,s){ var rs=charSyllables(ch); return (!rs||!rs.length)?true:(rs.indexOf(s)>=0); }
         function _fits(arr){ for(var i=0;i<given.length;i++){ if(!_ok(given[i],arr[i]))return false; } return true; }
@@ -537,7 +540,7 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
           } else {
             var auto=given.map(function(ch){ var rs=charSyllables(ch); return rs&&rs.length?rs[0]:''; });
             if(auto.every(Boolean)){ syl=auto; toneTokens=auto.slice(); pyBad=true;
-              warns.push('✏️ 技术单拼音写错：「'+neu+'」应该读「'+auto.join(' ')+'」，技术单写的是「'+aa.trim()+'」——已用正确读音检查，请通知改技术单');
+              warns.push('✏️ 技术单拼音对不上字库：「'+neu+'」我们查到的读音是「'+auto.join(' ')+'」，技术单写「'+aa.trim()+'」——可能是写错，也可能是罕见读音，请人手核对；两种读音都已拿来检查');
             } else { pyOk=false; warns.push('✏️ 技术单拼音和名字对不上（写：'+aa.trim()+'），有冷僻字查不到读音，已跳过谐音检查，请人手核对技术单拼音'); }
           }
         }
@@ -552,7 +555,7 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
       else if(RULES.checkHomo)warns.push('✏️ 技术单拼音有问题：「'+neu+'」有 '+given.length+' 个字，但拼音写了 '+syl.length+' 个（'+(aa.trim()||'空白')+'）——谐音没查到，请核对技术单');
       if(RULES.checkHomo&&pyOk){ var newSeq=syl.join('-'); fam.forEach(function(p){ var cmp=fg(p); if(cmp.length===syl.length&&cmp.length>=2){ var ok=true,fs=[]; for(var c=0;c<cmp.length;c++){ var s=charSyllables(cmp[c]); if(!s.length){ok=false;break;} fs.push(s[0]); } if(ok&&fs.join('-')===newSeq){ var wm='⚠ 整个名字连读和'+p[0]+'（'+p[1]+'）读音几乎一样（'+syl.join(' ')+'），请留意'; if(warns.indexOf(wm)<0)warns.push(wm); } } }); }
       if(RULES.checkTaboo){ given.forEach(function(ch,idx){ if(tb.single[norm(ch)]){msgs.push('新名（'+neu+'）用了禁忌/不想用的字（'+ch+'）'); addHit('禁忌',idx+1,ch,null);} }); if(tb.combos.indexOf(given.join(''))>=0)msgs.push('新名（'+neu+'）是禁忌名（'+given.join('')+'）'); }
-      if(RULES.checkTabooHomo&&pyOk){ var fsyl={}; for(var fc0 in tb.single){ charSyllables(fc0).forEach(function(s){ if(!fsyl[s])fsyl[s]=fc0; }); } given.forEach(function(ch,idx){ var si=syl[idx]; if(!si)return;   if((tb.avoidSyl||{})[si]&&!tb.single[norm(ch)]){ msgs.push('新名（'+neu+'）用了客户明说不要的读音「'+si+'」（'+ch+'）'); addHit('禁音',idx+1,ch,null); return; }   if(tb.single[norm(ch)])return; if(fsyl[si]&&norm(ch)!==norm(fsyl[si])){ warns.push('⚠ 新名「'+ch+'」('+si+') 和禁忌字「'+fsyl[si]+'」同音——客户可能不要这个读音，请确认'); addHit('禁音',idx+1,ch,null); } }); }
+      if(RULES.checkTabooHomo&&pyOk){ var fsyl={}; for(var fc0 in tb.single){ charSyllables(fc0).forEach(function(s){ if(!fsyl[s])fsyl[s]=fc0; }); } given.forEach(function(ch,idx){ var si=syl[idx]; if(!si)return;   if((tb.avoidSyl||{})[si])return;   if(tb.single[norm(ch)])return; if(fsyl[si]&&norm(ch)!==norm(fsyl[si])){ warns.push('⚠ 新名「'+ch+'」('+si+') 和禁忌字「'+fsyl[si]+'」同音——客户可能不要这个读音，请确认'); addHit('禁音',idx+1,ch,null); } }); }
       if(RULES.checkTrad){ var dispThis=String(data[ri][cols.disp]==null?'':data[ri][cols.disp]); if(dispThis.indexOf('繁')>=0){ var simps=[]; given.forEach(function(ch,idx){ if(S2T[ch]&&S2T[ch]!==ch){simps.push('简「'+ch+'」→繁「'+S2T[ch]+'」'); addHit('简体',idx+1,ch,null);} }); if(simps.length){ var tt=toTradName(neu); msgs.push('名册要繁体，但名字部分是简体：'+simps.join('、')+'，应改成「'+tt+'」（姓不变）'); } } }
             if(RULES.checkBadHomo){ var fullSyl=[]; Array.from(neu).forEach(function(ch,i){ if(i===0){ var s0=charSyllables(ch); fullSyl.push(s0.length?s0[0]:''); } else { var gi=i-1; fullSyl.push(pyOk?syl[gi]:(charSyllables(ch)[0]||'')); } });
         var seqFull=fullSyl.filter(Boolean).join(' '); var seqGiven=(pyOk?syl.join(' '):Array.from(neu).slice(1).map(function(c){return charSyllables(c)[0]||'';}).filter(Boolean).join(' '));
@@ -567,6 +570,11 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
           if(yb.indexOf(' ')>=0){ if((' '+yueStr+' ').indexOf(' '+yb+' ')>=0)hitYue=true; } else { if(yueSeq.indexOf(yb)>=0)hitYue=true; }
           if(hitYue){ warns.push('⚠ 粤语谐音：新名（'+neu+'）粤语读「'+yueStr+'」，'+(RULES.YUE_BAD[yb]||('近「'+yb+'」音'))+'，请用粤语念一遍确认'); break; } } }
       if(RULES.checkReuse&&window_reuseMap){ var others=window_reuseMap[neu]; if(others&&others.length){ var oo=others.filter(function(o){return o!==(grp._order||'').toUpperCase();}); if(oo.length)warns.push('⚠ 历史重名：「'+neu+'」之前配过订单 '+oo.slice(0,3).join('、')+'，客户可能觉得不独特'); } }
+            if(RULES.checkTabooHomo&&tb.avoidSyl&&Object.keys(tb.avoidSyl).length){ given.forEach(function(ch,idx){
+        var cands=charSyllables(ch).slice(); if(pyOk&&syl[idx]&&cands.indexOf(syl[idx])<0)cands.push(syl[idx]);
+        if(rawSyl&&rawSyl[idx]&&cands.indexOf(rawSyl[idx])<0)cands.push(rawSyl[idx]);
+        for(var q=0;q<cands.length;q++){ if(tb.avoidSyl[cands[q]]){ var mm='新名（'+neu+'）用了客户不要的读音「'+cands[q]+'」（'+ch+'）——禁忌栏/备注指明不要这个音';
+          if(msgs.indexOf(mm)<0){ msgs.push(mm); addHit('禁音',idx+1,ch,null); } break; } } }); }
       if(Array.from(neu).length!==3)warns.push('⚠ 新名是 '+Array.from(neu).length+' 个字（一般3字）');
       function uniq(a){var o=[],s={};a.forEach(function(x){if(!s[x]){s[x]=1;o.push(x);}});return o;}
       var tones=pyOk?given.map(function(ch,idx){return {ch:ch,syl:syl[idx],toned:(toneTokens[idx]||syl[idx])};}):[];
