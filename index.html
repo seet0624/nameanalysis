@@ -401,7 +401,17 @@ function stripRel(t){ if(REL_FULL[t])return ''; var arr=Array.from(t);
   if(arr.length>=2&&arr.every(function(c){return (REL_MOD+REL_ROOT).indexOf(c)>=0;}))return '';
   var m=t.match(REL_RE); if(m&&m[0].length<t.length){ var rest=t.slice(m[0].length); if(Array.from(rest).length>=2)return rest; }
   return t; }
-function splitNames(text){ var t=String(text==null?'':text); if(NULLS[t.trim()])return []; t=t.replace(/[（(][^）)]*[）)]/g,''); for(var i=0;i<NOISE.length;i++)t=t.split(NOISE[i]).join(''); var parts=t.split(/[@，,、；;：:　\s\/]+/),out=[]; for(var j=0;j<parts.length;j++){var c=cjkOnly(parts[j]);if(!c||NULLS[c])continue; c=stripRel(c); if(c&&!NULLS[c]&&Array.from(c).length>=2)out.push(c);} return out; }
+function splitNames(text){ var t=String(text==null?'':text); if(NULLS[t.trim()])return [];
+  var extra=[];
+  // 括号里若写了「名正言顺：某某」「改名 某某」「新名 某某」，那是家人真正下来的新名，要抓出来比对
+  var NM=/[\uff08(]([^\uff09)]*)[\uff09)]/g, mm;
+  while((mm=NM.exec(t))){ var inner=mm[1];
+    var km=inner.match(/(?:名正言顺|名正言順|新名|改名|更名)\s*[\uff1a:\u4e2d]?\s*([\u4e00-\u9fff]{2,4})/);
+    if(km&&km[1])extra.push(km[1]); }
+  t=t.replace(/[\uff08(][^\uff09)]*[\uff09)]/g,'');
+  for(var i=0;i<NOISE.length;i++)t=t.split(NOISE[i]).join('');
+  var parts=t.split(/[@\uff0c,\u3001\uff1b;\uff1a:\u3000\s\/]+/).concat(extra),out=[];
+  for(var j=0;j<parts.length;j++){var c=cjkOnly(parts[j]);if(!c||NULLS[c])continue; c=stripRel(c); if(c&&!NULLS[c]&&Array.from(c).length>=2&&out.indexOf(c)<0)out.push(c);} return out; }
 function familyMembers(row, cols){ var out=[];
   splitNames(row[cols.father]).forEach(function(n){out.push(['父亲',n]);});
   splitNames(row[cols.mother]).forEach(function(n){out.push(['母亲',n]);});
