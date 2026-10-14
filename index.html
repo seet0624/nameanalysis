@@ -56,12 +56,12 @@ body.light .logo{background:var(--ink);color:#E9D3A0}
 .filebox select option{background:var(--panel);color:var(--ink)}
 .addfile{border:0;background:transparent;color:var(--muted);width:34px;height:34px;border-radius:6px;display:flex;align-items:center;justify-content:center}
 .addfile:hover{color:var(--gold);background:var(--panel)}
-.prog{display:flex;align-items:center;gap:10px;min-width:200px;font-size:12px;color:var(--muted)}
+.prog{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:10px}
 .prog .bar{flex:1;height:6px;border-radius:99px;background:var(--line);overflow:hidden;min-width:80px}
 .prog .bar i{display:block;height:100%;background:var(--ok);border-radius:99px;transition:width .25s}
 .prog b{color:var(--ink);font-weight:500}
 .grow{flex:1}
-.searchbox{min-width:170px;flex:1 1 200px;max-width:340px}
+.searchbox{min-width:170px;flex:1 1 220px;max-width:360px}
 .searchbox input{flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:13px}
 kbd{font-family:inherit;font-size:11px;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:0 5px;line-height:18px;background:var(--panel)}
 .btn{display:inline-flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line2);border-radius:8px;min-height:40px;padding:0 14px;font-size:13px;white-space:nowrap}
@@ -84,14 +84,19 @@ kbd{font-family:inherit;font-size:11px;color:var(--muted);border:1px solid var(-
 .menu .mh{font-size:11px;color:var(--muted);letter-spacing:1px;padding:6px 12px 2px}
 
 /* ---------- welcome ---------- */
-.welcome{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:32px 20px}
-.dropcard{max-width:620px;width:100%;text-align:center;border:1.5px dashed var(--line2);border-radius:20px;padding:52px 32px;background:var(--panel);transition:.2s}
+.welcome{flex:1;overflow:auto;padding:36px 20px 48px}
+.home{max-width:1040px;margin:0 auto}
+.dropcard{text-align:center;border:1.5px dashed var(--sel-line);border-radius:20px;padding:38px 32px 34px;background:var(--panel);transition:.2s;margin-bottom:28px;cursor:pointer}
+.dropcard .dicon{width:68px;height:68px;border-radius:18px;background:rgba(212,175,106,.12);color:var(--gold);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.dropcard .dicon svg.i{width:32px;height:32px;stroke-width:1.6}
 .dropcard.over{border-color:var(--gold);background:var(--panel2)}
 .dropcard .big{font-family:var(--serif-tc);font-size:40px;font-weight:700;color:var(--gold);letter-spacing:6px;margin-bottom:8px}
-.dropcard h2{margin:0 0 6px;font-size:18px}
+.dropcard h2{margin:0;font-family:var(--serif-tc);font-weight:700;font-size:30px;letter-spacing:6px;color:var(--gold2)}
+body:not(.light) .dropcard h2{color:#E9D3A0}
 .dropcard p{margin:0;color:var(--muted);font-size:13px}
-.dropcard .btn.pri{margin-top:22px;min-height:46px;padding:0 24px;font-size:14px}
-.dropcard .priv{margin-top:22px;font-size:12px;color:var(--muted)}
+.dropcard p{margin-top:6px!important}
+.dropcard .btn.pri{margin-top:22px;min-height:48px;padding:0 28px;font-size:15px}
+.home .priv{margin-top:22px;font-size:12px;color:var(--muted);text-align:center}
 .dragover{position:fixed;inset:0;z-index:95;background:rgba(10,10,12,.72);display:none;align-items:center;justify-content:center;pointer-events:none}
 .dragover.on{display:flex}
 .dragover div{border:2px dashed var(--gold);border-radius:20px;padding:48px 64px;color:var(--gold);font-size:20px;font-weight:700;background:var(--panel)}
@@ -99,7 +104,7 @@ kbd{font-family:inherit;font-size:11px;color:var(--muted);border:1px solid var(-
 /* ---------- app ---------- */
 .app{flex:1;min-height:0;display:flex}
 .queue{flex:none;width:320px;border-right:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;min-height:0}
-.qtabs{display:flex;gap:3px;background:var(--panel2);border-radius:9px;padding:3px;margin:14px 12px 8px}
+.qtabs{display:flex;gap:3px;background:var(--panel2);border-radius:9px;padding:3px;margin:10px 12px 8px}
 .qtabs button{flex:1;border:0;border-radius:7px;background:transparent;font-size:12px;padding:7px 0;color:var(--muted);white-space:nowrap}
 .qtabs button.on{background:var(--line2);color:var(--ink)}
 body.light .qtabs button.on{background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.08)}
@@ -254,13 +259,79 @@ textarea{width:100%;background:var(--bg);border:1px solid var(--line2);border-ra
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 16px;font-size:13px;z-index:99;display:none;box-shadow:var(--shadow)}
 .toast.on{display:block}
 
+/* ---------- header tools ---------- */
+.verchip{border:1px solid var(--line2);background:transparent;color:var(--muted);border-radius:99px;padding:1px 9px;font-size:11px;line-height:18px}
+.verchip:hover{color:var(--gold);border-color:var(--gold)}
+.tgroup{display:flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.tgroup .tg{width:40px;height:38px;border:0;background:var(--panel2);display:flex;align-items:center;justify-content:center}
+.tgroup .tg+.tg{border-left:1px solid var(--line2)}
+.tgroup .tg:hover:not(:disabled){color:var(--gold)}
+.tgroup .tg:disabled{color:var(--line2);cursor:default}
+.tsep{width:1px;height:24px;background:var(--line2);margin:0 2px}
+.tbtn{display:inline-flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line2);border-radius:8px;min-height:40px;padding:0 12px;font-size:13px;white-space:nowrap}
+.tbtn .ic{color:var(--muted)}
+.tbtn:hover{border-color:var(--gold);color:var(--gold)} .tbtn:hover .ic{color:var(--gold)}
+.tbtn .cnt{color:var(--muted);font-size:12px}
+.tbtn .badge-n{display:none;background:var(--warn);color:var(--warn-solid-ink);border-radius:99px;font-size:11px;font-weight:700;padding:0 7px;line-height:18px}
+.tbtn.hot{border-color:var(--warn-line)} .tbtn.hot .ic{color:var(--warn)} .tbtn.hot .badge-n{display:inline-block}
+#moreBtn[aria-expanded=true]{border-color:var(--gold);color:var(--gold)}
+/* ---------- file card in queue ---------- */
+.fcard{margin:14px 12px 4px;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:10px 12px}
+.fc1{display:flex;align-items:center;gap:6px}
+.fc1 select{flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:13px;font-weight:500;min-height:30px;text-overflow:ellipsis;cursor:pointer}
+.fc1 select option{background:var(--panel);color:var(--ink);font-weight:400}
+.fc1 .addfile{width:30px;height:30px;border:1px solid var(--line2);background:var(--panel2)}
+/* ---------- info tabs (home + help) ---------- */
+.itabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:16px;max-width:520px}
+.itabs button{flex:1;border:0;border-radius:9px;min-height:40px;font-size:14px;background:transparent;color:var(--muted)}
+.itabs button.on{background:var(--line2);color:var(--gold2);font-weight:700}
+body:not(.light) .itabs button.on{color:#E9D3A0}
+body.light .itabs button.on{background:var(--bg2)}
+.ipanel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px 28px}
+.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:28px}
+.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:16px}
+.steps li{display:flex;gap:14px}
+.steps .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--pri-bg);color:var(--pri-ink);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px}
+.steps b{font-weight:500}
+.steps .d{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.ih{font-size:12px;color:var(--gold);letter-spacing:1.5px;font-weight:700;margin-bottom:12px}
+.kgrid{margin:0;display:grid;grid-template-columns:96px 1fr;row-gap:12px;font-size:13px}
+.kgrid dd{margin:0;color:var(--ink2)}
+.tip{margin-top:22px;background:rgba(212,175,106,.08);border:1px solid var(--sel-line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink2)}
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}
+.tcol{border:1px solid var(--line2);border-radius:12px;padding:16px 18px}
+.tcol.must{border-color:var(--bad-line)} .tcol.check{border-color:var(--warn-line)}
+.tcol .th{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.tcol .th .tier{border-radius:6px;padding:0 8px;font-size:12px;font-weight:700;line-height:22px}
+.tcol .th span+span{color:var(--muted);font-size:12px}
+.tcol ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--ink2)}
+.tcol li b{color:var(--ink);font-weight:500}
+.rtop{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:18px;color:var(--muted);font-size:13px}
+.rchips{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.rchip{border:1px solid var(--sel-line);color:var(--gold);background:transparent;border-radius:99px;padding:2px 10px;font-size:12px}
+body:not(.light) .rchip{color:#E9D3A0}
+.rchip.off{border-color:var(--line2);color:var(--muted);text-decoration:line-through}
+.rchip:hover{border-color:var(--gold)}
+.log{display:flex;flex-direction:column;gap:22px}
+.lrow{display:flex;gap:20px;flex-wrap:wrap}
+.lrow+.lrow{border-top:1px solid var(--line);padding-top:22px}
+.lrow .ld{flex:none;width:110px;font-weight:700}
+.lrow .new{display:inline-block;margin-top:4px;background:rgba(212,175,106,.14);color:var(--gold);border-radius:99px;padding:0 9px;font-size:11px;font-weight:400}
+.lrow .lb{flex:1;min-width:240px}
+.lrow .lt{font-weight:500;margin-bottom:6px}
+.lrow ul{margin:0;padding-left:18px;color:var(--ink2);font-size:13px;display:flex;flex-direction:column;gap:4px}
+.help .hbox{max-width:960px;max-height:88vh;overflow:auto;padding:22px 24px}
+.help .ipanel{padding:20px 22px}
 /* ---------- medium screens ---------- */
 @media (max-width:1320px){
   .queue{width:272px}
   .rail{flex-basis:250px}
   .center{flex-basis:440px}
-  .prog{min-width:150px}
-  .filebox{max-width:300px} .filebox select{max-width:230px}
+  .tbtn .lbl{display:none}
+  .tbtn{padding:0 10px}
+  header.top{gap:8px}
+  .verchip{display:none}
+  .searchbox{min-width:140px}
 }
 /* ---------- narrow screens ---------- */
 @media (max-width:900px){
@@ -286,55 +357,58 @@ textarea{width:100%;background:var(--bg);border:1px solid var(--line2);border-ra
   <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
   <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
   <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
   <symbol id="i-spk" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
-  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+  <symbol id="i-hash" viewBox="0 0 24 24"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-report" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></symbol>
 </svg>
 
 <header class="top">
-  <div class="brand"><div class="logo">名</div><b id="t_title">名字审核</b></div>
-  <div class="ctl filebox" id="fileBox" style="display:none">
-    <svg class="i" style="color:var(--muted)"><use href="#i-file"/></svg>
-    <label class="sr" for="fileSel">当前文件</label>
-    <select id="fileSel"></select>
-    <button type="button" class="addfile" id="addMore" aria-label="再加文件" title="再加文件"><svg class="i"><use href="#i-plus"/></svg></button>
-  </div>
-  <div class="prog" id="progBox" style="display:none"><span data-i18n="reviewed">已复核</span><div class="bar"><i id="revBar" style="width:0"></i></div><b id="revText">0 / 0</b></div>
-  <div class="grow"></div>
+  <div class="brand"><div class="logo">名</div><b id="t_title">名字审核</b><button type="button" class="verchip" id="verChip" data-act="changelog" title="看版本更新"></button></div>
   <label class="ctl searchbox" id="searchWrap" style="display:none">
     <svg class="i" style="color:var(--muted)"><use href="#i-search"/></svg>
-    <input id="searchBox" placeholder="搜学员、订单号、家人、字、拼音" aria-label="搜索" data-i18n-ph="search">
+    <input id="searchBox" placeholder="搜学员、订单号、字…" aria-label="搜索学员、订单号、家人、字、拼音" title="可搜学员、订单号、家人、字、拼音" data-i18n-ph="search">
     <kbd>/</kbd>
   </label>
+  <div class="grow"></div>
+  <div class="tgroup" data-need-file>
+    <button type="button" class="tg" id="undoBtn" data-act="undo" aria-label="撤销判定（Ctrl Z）" title="撤销判定（Ctrl Z）"><svg class="i"><use href="#i-undo"/></svg></button>
+    <button type="button" class="tg" id="redoBtn" data-act="redo" aria-label="重做判定" title="重做判定"><svg class="i"><use href="#i-redo"/></svg></button>
+  </div>
+  <span class="tsep" data-need-file></span>
+  <button type="button" class="tbtn" id="refsBtn" data-act="refs" data-need-file title="编号核对：备注提到的订单号 / 会员编号"><svg class="i ic"><use href="#i-hash"/></svg><span class="lbl">编号核对</span><span class="badge-n" id="refsBadge"></span></button>
+  <button type="button" class="tbtn" data-act="db" title="订单库：订单号 → 新名"><svg class="i ic"><use href="#i-db"/></svg><span class="lbl">订单库</span><span class="cnt" id="dbCount">0</span></button>
+  <button type="button" class="tbtn" data-act="quality" data-need-file title="质量看板"><svg class="i ic"><use href="#i-chart"/></svg><span class="lbl">质量看板</span></button>
+  <button type="button" class="tbtn" data-act="report" data-need-file title="报告（可打印 PDF）"><svg class="i ic"><use href="#i-report"/></svg><span class="lbl">报告</span></button>
+  <span class="tsep"></span>
+  <button type="button" class="sqbtn" data-act="settings" aria-label="规则设定" title="规则设定"><svg class="i"><use href="#i-sliders"/></svg></button>
+  <button type="button" class="sqbtn" data-act="theme" aria-label="深色 / 浅色" title="深色 / 浅色"><svg class="i"><use href="#i-sun"/></svg></button>
+  <button type="button" class="sqbtn" data-act="help" aria-label="使用说明" title="使用说明 · 快捷键（?）"><svg class="i"><use href="#i-help"/></svg></button>
   <div class="dd" id="moreWrap">
-    <button type="button" class="btn" id="moreBtn" aria-haspopup="true" aria-expanded="false"><span data-i18n="more">更多工具</span><svg class="i" style="color:var(--muted)"><use href="#i-down"/></svg></button>
+    <button type="button" class="sqbtn" id="moreBtn" aria-label="更多" title="更多" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-dots"/></svg></button>
     <div class="menu" id="moreMenu" role="menu">
       <div class="mh" data-need-file>文件</div>
-      <button type="button" data-act="addfile">＋ 再加文件</button>
       <button type="button" data-act="removefile" data-need-file>移除当前文件</button>
+      <button type="button" data-act="csv" data-need-file>问题清单 CSV</button>
       <hr data-need-file>
-      <div class="mh" data-need-file>订单 / 编号</div>
-      <button type="button" data-act="refs" data-need-file>编号核对（填家人新名）</button>
-      <button type="button" data-act="db">订单库 <span class="k" id="dbCount">0 笔</span></button>
-      <hr>
       <div class="mh" data-need-file>审核</div>
-      <button type="button" data-act="undo" data-need-file>撤销判定 <span class="k">Ctrl Z</span></button>
-      <button type="button" data-act="redo" data-need-file>重做判定</button>
       <button type="button" data-act="allok" data-need-file>本文件全部设为通过</button>
       <button type="button" data-act="sort" data-need-file>问题排前 <span class="k" id="sortState">开</span></button>
       <hr data-need-file>
-      <div class="mh" data-need-file>报表</div>
-      <button type="button" data-act="quality" data-need-file>质量看板</button>
-      <button type="button" data-act="report" data-need-file>报告（可打印 PDF）</button>
-      <button type="button" data-act="csv" data-need-file>问题清单 CSV</button>
-      <hr data-need-file>
-      <div class="mh">设定</div>
-      <button type="button" data-act="settings">规则设定</button>
+      <div class="mh">换电脑用</div>
       <button type="button" data-act="save">存档（订单库 + 判定 + 规则）</button>
       <button type="button" data-act="load">还原存档</button>
-      <button type="button" data-act="theme">深色 / 浅色</button>
+      <hr>
       <button type="button" data-act="lang" id="langBtn">English</button>
-      <button type="button" data-act="help">使用说明 · 快捷键</button>
     </div>
   </div>
   <div class="dd" id="dlWrap" style="display:none">
@@ -348,11 +422,14 @@ textarea{width:100%;background:var(--bg);border:1px solid var(--line2);border-ra
 </header>
 
 <div class="welcome" id="welcome">
-  <div class="dropcard" id="drop">
-    <div class="big">名正言顺</div>
-    <h2 id="t_drop1">把技术单 Excel 拖进来</h2>
-    <p id="t_drop2">可一次拖多份，会自动建「订单号 → 新名」总库，跨文件比对家人撞名</p>
-    <button type="button" class="btn pri" id="pickBtn"><svg class="i"><use href="#i-file"/></svg><span data-i18n="pick">选择文件</span></button>
+  <div class="home">
+    <section class="dropcard" id="drop" aria-label="载入技术单">
+      <div class="dicon"><svg class="i"><use href="#i-upload"/></svg></div>
+      <h2 id="t_drop1">把技术单拖到这里</h2>
+      <p id="t_drop2">拖到页面任何地方都行 · 可一次拖多份 · 会自动建「订单号 → 新名」总库做跨文件比对</p>
+      <button type="button" class="btn pri" id="pickBtn"><svg class="i"><use href="#i-file"/></svg><span data-i18n="pick">选择文件</span></button>
+    </section>
+    <div id="homeInfo"></div>
     <div class="priv" data-i18n="foot1">所有处理都在你的浏览器里完成，文件不会上传到任何服务器。</div>
   </div>
 </div>
@@ -360,6 +437,15 @@ textarea{width:100%;background:var(--bg);border:1px solid var(--line2);border-ra
 
 <div class="app" id="app" style="display:none">
   <nav class="queue" aria-label="学员队列">
+    <div class="fcard">
+      <div class="fc1">
+        <svg class="i" style="color:var(--muted)"><use href="#i-file"/></svg>
+        <label class="sr" for="fileSel">当前文件</label>
+        <select id="fileSel"></select>
+        <button type="button" class="addfile" id="addMore" aria-label="再加文件" title="再加文件"><svg class="i"><use href="#i-plus"/></svg></button>
+      </div>
+      <div class="prog"><span data-i18n="reviewed">已复核</span><div class="bar"><i id="revBar" style="width:0"></i></div><b id="revText">0 / 0</b></div>
+    </div>
     <div class="qtabs" id="qtabs" role="tablist"></div>
     <div class="qinfo" id="qinfo"></div>
     <div class="qlist" id="qlist"></div>
@@ -380,14 +466,8 @@ textarea{width:100%;background:var(--bg);border:1px solid var(--line2);border-ra
   <div class="mfoot"><button type="button" class="btn" id="setClose">关闭</button><button type="button" class="btn pri" id="reRun">重新检查</button></div>
 </div></div>
 <div class="help" id="help"><div class="hbox">
-  <h3>三步上手</h3>
-  <ol>
-    <li><b>拖入</b>技术单 Excel（可多份一起拖，拖到页面任何地方都行）。</li>
-    <li>左边是<b>学员队列</b>：红点＝必须改，橙点＝请你确认，绿点＝通过。点一位，中间看两个新名和要处理的事，右边看家人和要求。</li>
-    <li>看完勾<b>已复核</b>，需要就改判定，最后按右上金色<b>「下载结果」</b>。</li>
-  </ol>
-  <div class="keys"><span><kbd>J</kbd> <kbd>K</kbd> 下一位 / 上一位</span><span><kbd>空格</kbd> 已复核并跳下一位</span><span><kbd>N</kbd> 下一个必须改</span><span><kbd>/</kbd> 搜索</span></div>
-  <div class="mfoot"><button type="button" class="btn pri" id="helpClose">知道了</button></div>
+  <div id="helpInfo"></div>
+  <div class="mfoot"><button type="button" class="btn pri" id="helpClose">关闭</button></div>
 </div></div>
 <div class="toast" id="toast" role="status"></div>
 <script>
@@ -676,7 +756,7 @@ function savedReview(fname,sid){ var m=load('mzys_reviews',{}); return !!m[fname
 /*==== i18n (chrome only) ====*/
 var I18N={
   pick:['选择文件','Choose files'], more:['更多工具','More'], download:['下载结果','Download'],
-  reviewed:['已复核','Reviewed'], search:['搜学员、订单号、家人、字、拼音','Search students, orders, chars…'],
+  reviewed:['已复核','Reviewed'], search:['搜学员、订单号、字…','Search students, orders, chars…'],
   foot1:['所有处理都在你的浏览器里完成，文件不会上传到任何服务器。','Everything runs in your browser — files are never uploaded.']
 };
 function applyLang(){ var i=lang==='cn'?0:1;
@@ -705,11 +785,11 @@ function rebuild(){ var savedDB=load('mzys_db',{}); for(var k in savedDB)importe
   var has=parsedFiles.length>0;
   document.getElementById('welcome').style.display=has?'none':'flex';
   document.getElementById('app').style.display=has?'flex':'none';
-  ['fileBox','progBox','searchWrap'].forEach(function(id){ document.getElementById(id).style.display=has?'flex':'none'; });
+  document.getElementById('searchWrap').style.display=has?'flex':'none';
   document.getElementById('dlWrap').style.display=has?'block':'none';
   document.querySelectorAll('[data-need-file]').forEach(function(el){ el.style.display=has?'':'none'; });
-  document.getElementById('dbCount').textContent=Object.keys(db).length+' 笔';
-  saveDB(); renderAll(); }
+  document.getElementById('dbCount').textContent=Object.keys(db).length;
+  saveDB(); if(has)renderAll(); else { renderHome(); renderToolState(); } }
 
 /*==== issue model: 必须改 / 请确认 / 参考 ====*/
 var LEAD_RE=/^[\s⚠️✓✔✏•❓❗【]+/;
@@ -782,7 +862,11 @@ function renderHeader(){ var sel=document.getElementById('fileSel');
   sel.innerHTML=parsedFiles.map(function(x,i){ var nb=x.audit.results.filter(function(r){return r.problem;}).length; return '<option value="'+i+'"'+(i===activeFile?' selected':'')+'>'+esc(x.name)+(nb?'　·　'+nb+' 有问题':'　·　全部通过')+'</option>'; }).join('');
   var x=parsedFiles[activeFile]; if(!x)return; var tot=x.audit.results.length, rv=x.audit.results.filter(function(r){return r.reviewed;}).length;
   document.getElementById('revBar').style.width=(tot?Math.round(rv/tot*100):0)+'%'; document.getElementById('revText').textContent=rv+' / '+tot;
-  document.getElementById('sortState').textContent=sortProblems?'开':'关'; }
+  document.getElementById('sortState').textContent=sortProblems?'开':'关'; renderToolState(); }
+function renderToolState(){ var x=parsedFiles[activeFile]; var n=x?refsOf(x).pend.length:0;
+  var rb=document.getElementById('refsBtn'); rb.classList.toggle('hot',n>0); document.getElementById('refsBadge').textContent=n?String(n):'';
+  rb.title=n?('有 '+n+' 个编号要人手查名字'):'编号核对：备注提到的订单号 / 会员编号';
+  document.getElementById('undoBtn').disabled=!undoStack.length; document.getElementById('redoBtn').disabled=!redoStack.length; }
 function renderAll(){ if(!parsedFiles.length)return; var vis=visibleList();
   if(!vis.some(function(r){return String(r.sid)===String(curSid);}))curSid=vis.length?String(vis[0].sid):null;
   renderHeader(); renderQueue(); renderStudent(); }
@@ -971,7 +1055,7 @@ function recheck(r,neu,pyStr){ if(!neu)return []; var given=Array.from(neu).slic
 
 function changeVerdict(sid,val){ var x=parsedFiles[activeFile]; var r=x.audit.results.filter(function(rr){return String(rr.sid)===String(sid);})[0]; if(!r)return;
   undoStack.push({file:activeFile,sid:sid,old:r.verdict}); redoStack=[];
-  r.verdict=val; r.problem=(val==='有问题'); saveVerdicts(); renderAll(); toast('序'+sid+' 改为「'+val+'」（Ctrl Z 可撤销）'); }
+  r.verdict=val; r.problem=(val==='有问题'); saveVerdicts(); renderAll(); renderToolState(); toast('序'+sid+' 改为「'+val+'」（Ctrl Z 可撤销）'); }
 function doUndo(){ var u=undoStack.pop(); if(!u){ toast('没有可撤销的'); return; } var x=parsedFiles[u.file]; if(!x)return; if(u.bulk){ redoStack.push({bulk:true,file:u.file,snap:x.audit.results.map(function(r){return{sid:r.sid,v:r.verdict};})}); u.snap.forEach(function(s){ var r=x.audit.results.filter(function(rr){return rr.sid===s.sid;})[0]; if(r){r.verdict=s.v;r.problem=(s.v==='有问题');} }); } else { var r=x.audit.results.filter(function(rr){return String(rr.sid)===String(u.sid);})[0]; if(r){ redoStack.push({file:u.file,sid:u.sid,old:r.verdict}); r.verdict=u.old; r.problem=(u.old==='有问题'); } } activeFile=u.file; saveVerdicts(); renderAll(); toast('已撤销'); }
 function doRedo(){ var u=redoStack.pop(); if(!u){ toast('没有可重做的'); return; } var x=parsedFiles[u.file]; if(!x)return; if(u.bulk){ undoStack.push({bulk:true,file:u.file,snap:x.audit.results.map(function(r){return{sid:r.sid,v:r.verdict};})}); u.snap.forEach(function(s){ var r=x.audit.results.filter(function(rr){return rr.sid===s.sid;})[0]; if(r){r.verdict=s.v;r.problem=(s.v==='有问题');} }); } else { var r=x.audit.results.filter(function(rr){return String(rr.sid)===String(u.sid);})[0]; if(r){ undoStack.push({file:u.file,sid:u.sid,old:r.verdict}); r.verdict=u.old; r.problem=(u.old==='有问题'); } } activeFile=u.file; saveVerdicts(); renderAll(); toast('已重做'); }
 
@@ -1090,6 +1174,63 @@ function applySettings(){ document.querySelectorAll('#toggles input').forEach(fu
   var np={}; document.getElementById('polyEdit').value.split(/\r?\n/).forEach(function(line){ var p=line.split(':'); if(p.length<2)return; var ch=p[0].trim(); var rs=p[1].split(/[,，]/).map(function(s){return s.trim().toLowerCase();}).filter(Boolean); if(ch&&rs.length){ np[ch]=rs; if(typeof S2T!=='undefined'&&S2T[ch])np[S2T[ch]]=rs; } });
   if(Object.keys(np).length)RULES.POLY=np; var yb={}; var ye=document.getElementById('yueEdit'); if(ye)ye.value.split(/\r?\n/).forEach(function(line){ var i=line.indexOf(':'); if(i<0){ if(line.trim())yb[line.trim()]=''; return;} var k=line.slice(0,i).trim(); var v=line.slice(i+1).trim(); if(k)yb[k]=v; }); RULES.YUE_BAD=yb; rebuild(); }
 
+
+/*==== info: 使用说明 / 审核规则 / 版本更新 ====*/
+var CHANGELOG=[
+  {date:'2026-10-14', title:'三栏工作台 + 新首页', items:[
+    '左边学员队列、中间一次看一位、右边家人与要求',
+    '问题分「必须改 / 请确认 / 参考」三级，状态备注只显示一次',
+    '常用工具放在顶栏：撤销 / 重做、编号核对、订单库、质量看板、报告；文件切换和复核进度搬到左边',
+    '首页加使用说明、审核规则、版本更新',
+    '快捷键 J / K / 空格 / N / ?；试改名字不填拼音也能查撞音']},
+  {date:'2026-10-13', title:'家人栏括号里的新名也会比对', items:[
+    '「陳禹睿（名正言顺：陳宥均）」会把 陳宥均 也拿去比对，之前会漏掉撞字']},
+  {date:'2026-09-17', title:'订单号、拼音、禁忌音一批加强', items:[
+    '会员编号（AD…）也能关联家人；订单号旁边就地填名字',
+    '技术单拼音写错会提示正确读音',
+    '禁忌栏写拼音（如 cheng）当成客户不要的音',
+    '备注里「不要加上一天」这类话不再误当禁忌字']}
+];
+var RULE_DEFS=[['checkClash','撞字'],['checkHomo','撞谐音'],['checkTaboo','禁忌字'],['checkTabooHomo','禁忌字谐音'],['checkBadHomo','不雅谐音'],['checkYue','粤语谐音'],['checkTrad','繁体'],['checkPyMatch','拼音写错'],['checkPoly','多音字'],['checkOrder','订单号'],['checkOrderFuzzy','订单号去空格'],['checkSameFamily','一家人 / 重名'],['checkReuse','历史重名'],['checkZodiac','生肖部首']];
+var homeTab='guide';
+function kb(k){ return '<kbd>'+k+'</kbd>'; }
+function infoHtml(tab){
+  var tabs=[['guide','使用说明'],['rules','审核规则'],['log','版本更新']];
+  var h='<div class="itabs" role="tablist" aria-label="说明">'+tabs.map(function(t){ return '<button type="button" role="tab" data-tab="'+t[0]+'" aria-selected="'+(tab===t[0])+'" class="'+(tab===t[0]?'on':'')+'">'+t[1]+'</button>'; }).join('')+'</div>';
+  h+='<div class="ipanel" role="tabpanel">';
+  if(tab==='guide'){
+    var steps=[['拖入技术单','可多份一起拖。要比对别份文件的家人，先按顶栏「订单库」导入订单库。'],
+      ['看左边学员队列','<span style="color:var(--bad)">红点</span> 必须改（不能上传）· <span style="color:var(--warn)">橙点</span> 请你确认 · <span style="color:var(--ok)">绿点</span> 通过。默认问题排前面。'],
+      ['中间看两个新名和要处理的事','撞到的字会标红。点任何一个字看读音、粤语、简繁，喇叭键听整个名字。「试改名字」可以当场试别的名。'],
+      ['右边看家人和要求','「关联编号」里标「待补」的，去系统查到名字就直接填在旁边，按 Enter 马上重新比对。'],
+      ['勾「已复核」，再下载结果','需要就手动改判定。右上金色「下载结果」会给你「有问题」和「干净·可上传」两份。']];
+    h+='<div class="guide"><ol class="steps">'+steps.map(function(st,i){ return '<li><span class="n">'+(i+1)+'</span><span><b>'+st[0]+'</b><span class="d">'+st[1]+'</span></span></li>'; }).join('')+'</ol>'+
+      '<div><div class="ih">快捷键</div><dl class="kgrid">'+
+      '<dt>'+kb('J')+' '+kb('K')+'</dt><dd>下一位 / 上一位</dd><dt>'+kb('空格')+'</dt><dd>标记已复核，并跳到下一位</dd><dt>'+kb('N')+'</dt><dd>跳到下一个「必须改」</dd>'+
+      '<dt>'+kb('/')+'</dt><dd>搜学员、订单号、家人、字、拼音</dd><dt>'+kb('Ctrl Z')+'</dt><dd>撤销刚才改的判定</dd><dt>'+kb('?')+'</dt><dd>打开这页说明</dd><dt>'+kb('Esc')+'</dt><dd>关掉弹窗或菜单</dd></dl>'+
+      '<div class="tip">判定、已复核、订单库都存在这台电脑的浏览器里。换电脑前按顶栏「⋯ → 存档」导出，到新电脑「还原存档」。</div></div></div>';
+  } else if(tab==='rules'){
+    function col(cls,label,sub,items){ return '<div class="tcol '+cls+'"><div class="th"><span class="tier '+cls+'">'+label+'</span><span>'+sub+'</span></div><ul>'+items.map(function(it){ return '<li><b>'+it[0]+'</b>'+(it[1]?'：'+it[1]:'')+'</li>'; }).join('')+'</ul></div>'; }
+    h+='<div class="rtop"><span>每一项检查都会归到三级之一。两个新名只要有一个是「必须改」，整个学员就不能上传。</span><span class="grow"></span><button type="button" class="linkbtn" data-act="settings" style="margin:0;font-size:13px">规则设定（开关 / 加禁忌字）→</button></div>';
+    h+='<div class="tiers">'+
+      col('must','必须改','不能上传',[['撞字','和父母、兄弟姐妹、伴侣、子女同一个字（括号里写的「名正言顺：XXX」新名也算）'],['撞音','和家人完全同音同调'],['禁忌字 / 不要的音','禁忌栏或备注写的字，或写成拼音（如 cheng）'],['不雅谐音','连姓一起念像不好的词'],['繁体','名册要繁体，名字却是简体'],['两个名太像','同样的字调换顺序，或拼音完全一样']])+
+      col('check','请确认','人工看过再决定',[['订单状态备注','有写就先卡住，看过再放行'],['同音不同调','和家人同音但声调不同'],['禁忌字同音','不是同一个字，但读音一样'],['粤语谐音','用粤语念近不吉的音'],['生肖忌用部首',''],['疑似同一家人 / 历史重名',''],['要查的订单 / 会员编号','家人的名字还没下来']])+
+      col('info','参考','不影响上传',[['技术单拼音写错','会用正确读音再查一遍，记得通知改单'],['多音字','提醒确认读法'],['生肖喜用部首',''],['已自动关联的编号','家人在同一批文件里，已比对过']])+'</div>';
+    h+='<div class="rchips"><span>现在开着：</span>'+RULE_DEFS.map(function(d){ var on=!!RULES[d[0]]; return '<button type="button" class="rchip'+(on?'':' off')+'" data-act="settings" title="'+(on?'开着':'关着')+'，点一下去规则设定">'+d[1]+'</button>'; }).join('')+'</div>';
+  } else {
+    h+='<div class="log">'+CHANGELOG.map(function(v,i){ return '<div class="lrow"><div class="ld">'+v.date+(i===0?'<br><span class="new">最新</span>':'')+'</div><div class="lb"><div class="lt">'+esc(v.title)+'</div><ul>'+v.items.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul></div></div>'; }).join('')+'</div>';
+  }
+  return h+'</div>'; }
+function bindInfo(host, onTab){
+  host.querySelectorAll('.itabs [data-tab]').forEach(function(b){ b.onclick=function(){ onTab(b.getAttribute('data-tab')); }; });
+  host.querySelectorAll('[data-act]').forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); closeModals(); runAct(b.getAttribute('data-act')); }; }); }
+function renderHome(){ var host=document.getElementById('homeInfo'); host.innerHTML=infoHtml(homeTab); bindInfo(host,function(t){ homeTab=t; renderHome(); }); }
+function openHelp(tab){
+  if(!parsedFiles.length){ homeTab=tab||'guide'; renderHome(); var hi=document.getElementById('homeInfo'); try{ hi.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} return; }
+  var host=document.getElementById('helpInfo');
+  function draw(t){ host.innerHTML=infoHtml(t); bindInfo(host,draw); }
+  draw(tab||'guide'); document.getElementById('help').style.display='flex'; }
+
 /*==== small helpers ====*/
 var _tt=null; function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(_tt); _tt=setTimeout(function(){ t.classList.remove('on'); },1800); }
 function closeMenus(){ document.querySelectorAll('.menu.open').forEach(function(m){ m.classList.remove('open'); }); ['moreBtn','dlBtn'].forEach(function(id){ var b=document.getElementById(id); if(b)b.setAttribute('aria-expanded','false'); }); }
@@ -1112,11 +1253,13 @@ function runAct(a){ var x=parsedFiles[activeFile];
     case 'report': openReport(); break;
     case 'csv': exportCSV(); break;
     case 'settings': buildSettings(); document.getElementById('setModal').style.display='flex'; break;
+    case 'rules': openHelp('rules'); break;
     case 'save': exportSession(); break;
     case 'load': importSession(); break;
     case 'theme': document.body.classList.toggle('light'); store('mzys_theme', document.body.classList.contains('light')?'light':'dark'); break;
     case 'lang': lang=lang==='cn'?'en':'cn'; store('mzys_lang',lang); applyLang(); break;
-    case 'help': document.getElementById('help').style.display='flex'; break;
+    case 'help': openHelp('guide'); break;
+    case 'changelog': openHelp('log'); break;
     case 'dlzip': downloadZip(); break;
     case 'dlbad': downloadSplit(true); break;
     case 'dlclean': downloadSplit(false); break;
@@ -1139,17 +1282,19 @@ document.getElementById('searchBox').oninput=function(e){ searchTerm=e.target.va
 document.getElementById('searchBox').onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); } };
 document.getElementById('moreBtn').onclick=function(e){ e.stopPropagation(); toggleMenu('moreBtn','moreMenu'); };
 document.getElementById('dlBtn').onclick=function(e){ e.stopPropagation(); toggleMenu('dlBtn','dlMenu'); };
-document.querySelectorAll('.menu [data-act]').forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); closeMenus(); runAct(b.getAttribute('data-act')); }; });
+document.querySelectorAll('header [data-act]').forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); closeMenus(); runAct(b.getAttribute('data-act')); }; });
 document.getElementById('setClose').onclick=function(){ document.getElementById('setModal').style.display='none'; };
-document.getElementById('reRun').onclick=function(){ applySettings(); document.getElementById('setModal').style.display='none'; toast('已按新规则重新检查'); };
-document.getElementById('helpClose').onclick=function(){ document.getElementById('help').style.display='none'; store('mzys_seen2',1); };
+document.getElementById('reRun').onclick=function(){ applySettings(); document.getElementById('setModal').style.display='none'; if(!parsedFiles.length)renderHome(); toast('已按新规则重新检查'); };
+document.getElementById('helpClose').onclick=function(){ document.getElementById('help').style.display='none'; };
 ['modal','setModal','help'].forEach(function(id){ var m=document.getElementById(id); m.addEventListener('click',function(e){ if(e.target===m)m.style.display='none'; }); });
 document.addEventListener('click',function(e){ if(!e.target.closest('.dd'))closeMenus(); var pop=document.getElementById('pop'); if(pop.style.display==='block'&&!pop.contains(e.target)&&!e.target.closest('.han'))hidePop(); });
 document.addEventListener('keydown',function(e){ var tg=e.target, tn=tg.tagName;
   if(e.key==='Escape'){ closeMenus(); hidePop(); closeModals(); if(tg.id==='searchBox')tg.blur(); return; }
   if(tn==='INPUT'||tn==='TEXTAREA'||tn==='SELECT'||tg.isContentEditable)return;
-  if(!parsedFiles.length||anyModalOpen())return;
+  if(anyModalOpen())return;
   var k=e.key;
+  if(k==='?'){ e.preventDefault(); openHelp('guide'); return; }
+  if(!parsedFiles.length)return;
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&(k==='z'||k==='Z')){ e.preventDefault(); doUndo(); return; }
   if((e.ctrlKey||e.metaKey)&&(k==='y'||k==='Y'||(e.shiftKey&&(k==='z'||k==='Z')))){ e.preventDefault(); doRedo(); return; }
   if(e.ctrlKey||e.metaKey||e.altKey)return;
@@ -1162,10 +1307,11 @@ document.addEventListener('keydown',function(e){ var tg=e.target, tn=tg.tagName;
 
 /* init */
 (function(){ var th=load('mzys_theme','dark'); if(th==='light')document.body.classList.add('light'); lang=load('mzys_lang','cn');
-  var sd=load('mzys_db',{}); for(var k in sd)importedDB[k]=sd[k]; document.getElementById('dbCount').textContent=Object.keys(sd).length+' 笔';
+  var sd=load('mzys_db',{}); for(var k in sd)importedDB[k]=sd[k]; document.getElementById('dbCount').textContent=Object.keys(sd).length;
+  document.getElementById('verChip').textContent=CHANGELOG[0].date+' 版';
+  try{ window._DB=buildOrderDB([], importedDB); }catch(e){ window._DB=Object.assign({},importedDB); }
   document.querySelectorAll('[data-need-file]').forEach(function(el){ el.style.display='none'; });
-  buildSettings(); applyLang();
-  if(!load('mzys_seen2',0))document.getElementById('help').style.display='flex'; })();
+  buildSettings(); applyLang(); renderHome(); renderToolState(); })();
 </script>
 </body>
 </html>
