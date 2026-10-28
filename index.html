@@ -62,6 +62,7 @@ body.light .logo{background:var(--ink);color:#E9D3A0}
 .prog b{color:var(--ink);font-weight:500}
 .grow{flex:1}
 .searchbox{min-width:170px;flex:1 1 220px;max-width:360px}
+#dlWrap{margin-left:auto} /* 真的换行时也靠右，不落到最左边 */
 .searchbox input{flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:13px}
 kbd{font-family:inherit;font-size:11px;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:0 5px;line-height:18px;background:var(--panel)}
 .btn{display:inline-flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line2);border-radius:8px;min-height:40px;padding:0 14px;font-size:13px;white-space:nowrap}
@@ -323,12 +324,15 @@ body:not(.light) .rchip{color:#E9D3A0}
 .help .hbox{max-width:960px;max-height:88vh;overflow:auto;padding:22px 24px}
 .help .ipanel{padding:20px 22px}
 /* ---------- medium screens ---------- */
+/* 顶栏工具按钮带文字时要约 1550px 才放得下，再窄就只留图标（鼠标停上去有提示），免得「下载结果」被挤到第二行 */
+@media (max-width:1560px){
+  .tbtn .lbl{display:none}
+  .tbtn{padding:0 10px}
+}
 @media (max-width:1320px){
   .queue{width:272px}
   .rail{flex-basis:250px}
   .center{flex-basis:440px}
-  .tbtn .lbl{display:none}
-  .tbtn{padding:0 10px}
   header.top{gap:8px}
   .verchip{display:none}
   .searchbox{min-width:140px}
@@ -1234,7 +1238,8 @@ var CHANGELOG=[
   {date:'2026-10-28', title:'「有问题」那份改成回传格式', items:[
     '原因写在最后一栏右边，一句话说清楚，例如：新下来的名字（王科杰）跟妈妈新下来的名字（卢和洁）撞同音字（杰 jié，洁 jié）',
     '黄底红字、合并 8 格，同一位学员两行都写；不再加标题栏和「最终判定」栏，名字格不再涂色',
-    '删掉没问题的行后，表尾「审核人 / 制表时间 / 回传时间」的合并格不会再错位']},
+    '删掉没问题的行后，表尾「审核人 / 制表时间 / 回传时间」的合并格不会再错位',
+    '修顶栏跑位：屏幕不够宽时工具按钮只留图标，「下载结果」不再掉到第二行；下拉菜单不会跑出屏幕']},
   {date:'2026-10-21', title:'不雅谐音改成放行 + 发音清单', items:[
     '新名连姓念起来不好听（不雅谐音）不再卡上传，改成「参考」提示',
     '顶栏新增「发音清单」：列出读起来不好听的新名（含粤语谐音），可一键复制给客服或下载 CSV']},
@@ -1295,7 +1300,12 @@ function openHelp(tab){
 /*==== small helpers ====*/
 var _tt=null; function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(_tt); _tt=setTimeout(function(){ t.classList.remove('on'); },1800); }
 function closeMenus(){ document.querySelectorAll('.menu.open').forEach(function(m){ m.classList.remove('open'); }); ['moreBtn','dlBtn'].forEach(function(id){ var b=document.getElementById(id); if(b)b.setAttribute('aria-expanded','false'); }); }
-function toggleMenu(btnId,menuId){ var m=document.getElementById(menuId); var open=!m.classList.contains('open'); closeMenus(); if(open){ m.classList.add('open'); document.getElementById(btnId).setAttribute('aria-expanded','true'); var f=m.querySelector('button'); if(f)f.focus(); } }
+// 顶栏窄的时候会换行，按钮可能落在最左边：菜单默认往左展开，放不下就改往右展开，不让它跑出屏幕
+function placeMenu(m){ m.style.left=''; m.style.right=''; m.style.minWidth=''; var vw=document.documentElement.clientWidth;
+  if(vw<256)m.style.minWidth=(vw-16)+'px'; var r=m.getBoundingClientRect();
+  if(r.left<8){ m.style.right='auto'; m.style.left='0'; r=m.getBoundingClientRect(); if(r.right>vw-8)m.style.left=(vw-8-r.right)+'px'; } }
+function toggleMenu(btnId,menuId){ var m=document.getElementById(menuId); var open=!m.classList.contains('open'); closeMenus(); if(open){ m.classList.add('open'); placeMenu(m); document.getElementById(btnId).setAttribute('aria-expanded','true'); var f=m.querySelector('button'); if(f)f.focus(); } }
+window.addEventListener('resize',function(){ document.querySelectorAll('.menu.open').forEach(placeMenu); });
 function anyModalOpen(){ return ['modal','setModal','help'].some(function(id){ return document.getElementById(id).style.display==='flex'; }); }
 function closeModals(){ if(document.getElementById('help').style.display==='flex')store('mzys_seen2',1); ['modal','setModal','help'].forEach(function(id){ document.getElementById(id).style.display='none'; }); }
 
