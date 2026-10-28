@@ -644,7 +644,7 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
     if(RULES.checkOrder){ var scanText=''; rows.forEach(function(ri){ data[ri].forEach(function(cell){scanText+=' '+String(cell==null?'':cell);}); }); var seen={};
       (scanText.match(ORDER_RE)||[]).forEach(function(num){ var key=num.toUpperCase(); if(ownSet[key]||seen[key])return; seen[key]=1;
         var rel=orderIndex[key]; var viaM=false; if(!rel&&memberIndex[key]){ rel=memberIndex[key]; viaM=true; }
-        if(rel){ var relNames=[]; rel._givens.forEach(function(gn){if(gn){fam.push(['关联学员「'+rel._disp+'」('+num+')',gn,false,true]); if(relNames.indexOf(gn)<0)relNames.push(gn);}}); detectedOrders.push({num:num,tag:'已关联 '+rel._disp+(viaM?'（会员编号）':'')+(relNames.length?'（'+relNames.join('／')+'）':'')}); orderProblems.push('✓ 订单「'+num+'」对应家人「'+rel._disp+'」'+(relNames.length?'（新名：'+relNames.join('／')+'）':'')+'——工具已自动比对撞字撞音，建议你再人手核对一次这个名字'); }
+        if(rel){ var relNames=[]; rel._givens.forEach(function(gn){if(gn){fam.push(['关联学员「'+rel._disp+'」('+num+')',gn,false,true,rel._fullnames[rel._givens.indexOf(gn)]||gn]); if(relNames.indexOf(gn)<0)relNames.push(gn);}}); detectedOrders.push({num:num,tag:'已关联 '+rel._disp+(viaM?'（会员编号）':'')+(relNames.length?'（'+relNames.join('／')+'）':'')}); orderProblems.push('✓ 订单「'+num+'」对应家人「'+rel._disp+'」'+(relNames.length?'（新名：'+relNames.join('／')+'）':'')+'——工具已自动比对撞字撞音，建议你再人手核对一次这个名字'); }
         else if(orderDB&&orderDB[key]){ orderDB[key].forEach(function(fn){fam.push(['关联订单 '+num+' 的新名',fn]);}); detectedOrders.push({num:num,tag:'已关联'}); }
         else { unresolvedOrders.push(num); detectedOrders.push({num:num,tag:'待补'}); orderProblems.push('🔍 备注/家人栏有名正言顺订单「'+num+'」——请人手去系统查这单的名字下来了没。下来了就在上方输入框填上，系统会自动比对撞字撞音；还没下来先不填，不算问题'); } });
       if(RULES.checkOrderFuzzy){ var seen2={};
@@ -684,7 +684,7 @@ function auditParsed(pf, orderDB){ var data=pf.data,cols=pf.cols,groups=pf.group
           }
         }
       }
-      function addHit(kind,ni,fc,p){ hits.push({kind:kind,ni:ni,fc:fc,fname:p?p[1]:'',member:p?p[0]:'',soft:p?!!p[2]:false}); }
+      function addHit(kind,ni,fc,p){ hits.push({kind:kind,ni:ni,fc:fc,fname:p?p[1]:'',full:p?(p[4]||p[1]):'',member:p?p[0]:'',soft:p?!!p[2]:false}); }
       if(RULES.checkClash)given.forEach(function(ch,idx){ var nch=norm(ch); fam.forEach(function(p){ var cmp=fg(p); for(var c=0;c<cmp.length;c++){ if(norm(cmp[c])===nch){ var m='新名（'+neu+'）和'+p[0]+'（'+p[1]+'）撞字（'+ch+'）'; if(p[2])warns.push('⚠ '+m+'，请确认是否同一家人'); else {msgs.push(m); addHit('撞字',idx+1,cmp[c],p);} break; } } }); });
       if(RULES.checkHomo&&pyOk)given.forEach(function(ch,idx){ var si=syl[idx],nch=norm(ch);
         fam.forEach(function(p){ var cmp=fg(p); for(var c=0;c<cmp.length;c++){ var fc=cmp[c]; if(norm(fc)===nch)continue;
@@ -1091,17 +1091,47 @@ function showPop(el,ch){ var pop=document.getElementById('pop'); var reads=readi
   var pb=pop.querySelector('.play'); if(pb)pb.focus(); }
 
 /*==== downloads ====*/
+// 「有问题」那份的原因：一句话说清楚，跟客服回传的写法一样
+function relWord(d,key){ if(!key)return ''; var SKIP=/名正言[顺順]|新名|改名|更名/;
+  var fields=[d.sib,d.kids,d.note1,d.note2];
+  for(var i=0;i<fields.length;i++){ var t=String(fields[i]||''), at=t.indexOf(key); if(at<0)continue;
+    var ms=t.slice(0,at).match(/[一-鿿]{1,4}(?=[：:])/g)||[];
+    for(var j=ms.length-1;j>=0;j--){ if(!SKIP.test(ms[j]))return ms[j]; } }
+  return ''; }
+function isNewName(d,nm){ var re=new RegExp('(?:名正言[顺順]|新名|改名|更名)\\s*[\\uff1a:]?\\s*'+nm); return [d.father,d.mother,d.sib,d.kids].some(function(t){ return re.test(String(t||'')); }); }
+function whoOf(h,d){ var m=h.member, o;
+  if(m==='父亲'||m==='母亲')return {who:m,isNew:isNewName(d,h.full)};
+  if((o=m.match(/^关联订单\s*(\S+)\s*的新名$/)))return {who:relWord(d,o[1])||('订单 '+o[1]),isNew:true};
+  if((o=m.match(/^关联学员「([^」]*)」\(([^)]*)\)$/)))return {who:relWord(d,o[2])||relWord(d,o[1])||o[1],isNew:true};
+  return {who:relWord(d,h.full)||(m==='备注提到'?'备注里提到的人':m),isNew:isNewName(d,h.full)}; }
+function outReason(r){ var out=[];
+  r.rows.forEach(function(rw){ var g=Array.from(rw.given), d=rw.detail||{};
+    rw.hits.forEach(function(h){ if(h.kind!=='撞字'&&h.kind!=='撞音')return; var ch=g[h.ni-1]||h.fc, w=whoOf(h,d);
+      var head='新下来的名字（'+rw.neu+'）跟'+w.who+(w.isNew?'新下来的名字':'的名字')+'（'+h.full+'）';
+      if(h.kind==='撞字')out.push(head+'撞同一个字（'+ch+'）');
+      else { var t=rw.tones[h.ni-1]||{}; out.push(head+'撞同音字（'+ch+' '+(t.toned||t.syl||'')+'，'+h.fc+' '+addTone(t.syl||'',toneOf(h.fc))+'）'); } });
+    rw.msgs.forEach(function(m){ if(!CLASH_RE.test(m))out.push(cleanMsg(m)); }); });
+  if(!out.length)r.rows.forEach(function(rw){ rw.warns.forEach(function(w){ if(warnTier(w)==='check')out.push(cleanMsg(w)); }); });
+  var seen={}; out=out.filter(function(t){ if(seen[t])return false; seen[t]=1; return true; });
+  return out.length?out.join('；'):'人工判定有问题'; }
+
 async function buildSplitWorkbook(x, keepProblem){ var wb=new ExcelJS.Workbook(); await wb.xlsx.load(x._buf.slice(0));
-  var ws=wb.getWorksheet(x.sheetName)||wb.worksheets[0]; var au=x.audit, cols=au.cols, hr=au.hr;
-  var helperByRow={}; au.results.forEach(function(r){ r.rows.forEach(function(rw){ helperByRow[rw.row+1]={msgs:rw.msgs,warns:rw.warns,verdict:r.verdict,problem:r.problem}; }); });
-  var delRows=[]; au.results.forEach(function(r){ if((keepProblem&&!r.problem)||(!keepProblem&&r.problem))r.rows.forEach(function(rw){ delRows.push(rw.row+1); }); });
-  if(keepProblem){ var lastCol=ws.columnCount; ws.getRow(hr+1).getCell(lastCol+1).value='审核提示（自动检查）'; ws.getRow(hr+1).getCell(lastCol+2).value='最终判定';
-    [lastCol+1,lastCol+2].forEach(function(c){ var cell=ws.getRow(hr+1).getCell(c); cell.font={bold:true,color:{argb:'FFFFFFFF'}}; cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFC0504D'}}; });
-    ws.getColumn(lastCol+1).width=52; ws.getColumn(lastCol+2).width=12;
-    for(var rr=hr+2;rr<=ws.rowCount;rr++){ var h=helperByRow[rr]; if(!h)continue; var lines=(h.msgs.length?h.msgs:['✓ 无自动检出问题']).concat(h.warns);
-      var c1=ws.getRow(rr).getCell(lastCol+1); c1.value=lines.join('\n'); c1.alignment={wrapText:true,vertical:'top'}; var c2=ws.getRow(rr).getCell(lastCol+2); c2.value=h.verdict;
-      if(h.problem){ var nameCell=ws.getRow(rr).getCell((cols.neu||0)+1); [c1,c2,nameCell].forEach(function(cc){ cc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFFF00'}}; cc.font={color:{argb:'FFFF0000'},bold:true}; }); } } }
-  delRows.sort(function(a,b){return b-a;}).forEach(function(rn){ ws.spliceRows(rn,1); }); return wb; }
+  var ws=wb.getWorksheet(x.sheetName)||wb.worksheets[0]; var au=x.audit, hr=au.hr;
+  var lastCol=0, reasonByRow={}, delRows=[]; au.header.forEach(function(h,i){ if(String(h).trim())lastCol=i+1; });
+  au.results.forEach(function(r){ var keep=keepProblem?r.problem:!r.problem; var why=keep&&keepProblem?outReason(r):'';
+    r.rows.forEach(function(rw){ if(keep)reasonByRow[rw.row+1]=why; else delRows.push(rw.row+1); }); });
+  var gone=delRows.slice().sort(function(a,b){return a-b;}); function newRow(old){ var n=0; while(n<gone.length&&gone[n]<old)n++; return old-n; }
+  // ExcelJS 删行不会把下面的合并格（例如表尾「回传时间」）一起往上移，先拆开，删完再按新位置合并回去
+  var moved=[]; if(gone.length)(ws.model.merges||[]).forEach(function(rg){ var m=rg.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/); if(!m||+m[4]<gone[0])return;
+    ws.unMergeCells(rg); var drop=gone.some(function(g){ return g>=+m[2]&&g<=+m[4]; }); if(!drop)moved.push(m[1]+newRow(+m[2])+':'+m[3]+newRow(+m[4])); });
+  delRows.sort(function(a,b){return b-a;}).forEach(function(rn){ ws.spliceRows(rn,1); });
+  moved.forEach(function(rg){ ws.mergeCells(rg); });
+  if(keepProblem){
+    Object.keys(reasonByRow).forEach(function(k){ var rr=newRow(+k);
+      var c=ws.getRow(rr).getCell(lastCol+1); c.value=reasonByRow[k];
+      c.font={name:'宋体',size:12,color:{argb:'FFFF0000'}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFFF00'}}; c.alignment={horizontal:'center',vertical:'middle'};
+      ws.mergeCells(rr,lastCol+1,rr,lastCol+8); }); }
+  return wb; }
 function dateStr(){ var d=new Date(); function p(n){return(n<10?'0':'')+n;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
 function dl(blob,name){ var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); }
 async function downloadSplit(keepProblem){ if(!parsedFiles.length)return; var x=parsedFiles[activeFile]; var wb=await buildSplitWorkbook(x,keepProblem); var base=x.name.replace(/\.(xlsx|xls)$/i,''); dl(new Blob([await wb.xlsx.writeBuffer()]),(keepProblem?'（有问题）':'（干净·可上传）')+base+'.xlsx'); }
@@ -1201,6 +1231,10 @@ function applySettings(){ document.querySelectorAll('#toggles input').forEach(fu
 
 /*==== info: 使用说明 / 审核规则 / 版本更新 ====*/
 var CHANGELOG=[
+  {date:'2026-10-28', title:'「有问题」那份改成回传格式', items:[
+    '原因写在最后一栏右边，一句话说清楚，例如：新下来的名字（王科杰）跟妈妈新下来的名字（卢和洁）撞同音字（杰 jié，洁 jié）',
+    '黄底红字、合并 8 格，同一位学员两行都写；不再加标题栏和「最终判定」栏，名字格不再涂色',
+    '删掉没问题的行后，表尾「审核人 / 制表时间 / 回传时间」的合并格不会再错位']},
   {date:'2026-10-21', title:'不雅谐音改成放行 + 发音清单', items:[
     '新名连姓念起来不好听（不雅谐音）不再卡上传，改成「参考」提示',
     '顶栏新增「发音清单」：列出读起来不好听的新名（含粤语谐音），可一键复制给客服或下载 CSV']},
