@@ -62,6 +62,7 @@ body.light .logo{background:var(--ink);color:#E9D3A0}
 .prog b{color:var(--ink);font-weight:500}
 .grow{flex:1}
 .searchbox{min-width:170px;flex:1 1 220px;max-width:360px}
+#dlWrap{margin-left:auto} /* 真的换行时也靠右，不落到最左边 */
 .searchbox input{flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:13px}
 kbd{font-family:inherit;font-size:11px;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:0 5px;line-height:18px;background:var(--panel)}
 .btn{display:inline-flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line2);border-radius:8px;min-height:40px;padding:0 14px;font-size:13px;white-space:nowrap}
@@ -278,6 +279,8 @@ textarea{width:100%;background:var(--bg);border:1px solid var(--line2);border-ra
 /* ---------- file card in queue ---------- */
 .fcard{margin:14px 12px 4px;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:10px 12px}
 .fc1{display:flex;align-items:center;gap:6px}
+.hchip{flex:none;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);border-radius:99px;font-size:12px;padding:0 10px;height:26px;white-space:nowrap}
+.hchip.on{border-color:var(--gold);color:var(--gold)}
 .fc1 select{flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:13px;font-weight:500;min-height:30px;text-overflow:ellipsis;cursor:pointer}
 .fc1 select option{background:var(--panel);color:var(--ink);font-weight:400}
 .fc1 .addfile{width:30px;height:30px;border:1px solid var(--line2);background:var(--panel2)}
@@ -323,12 +326,15 @@ body:not(.light) .rchip{color:#E9D3A0}
 .help .hbox{max-width:960px;max-height:88vh;overflow:auto;padding:22px 24px}
 .help .ipanel{padding:20px 22px}
 /* ---------- medium screens ---------- */
+/* 顶栏工具按钮带文字时要约 1550px 才放得下，再窄就只留图标（鼠标停上去有提示），免得「下载结果」被挤到第二行 */
+@media (max-width:1560px){
+  .tbtn .lbl{display:none}
+  .tbtn{padding:0 10px}
+}
 @media (max-width:1320px){
   .queue{width:272px}
   .rail{flex-basis:250px}
   .center{flex-basis:440px}
-  .tbtn .lbl{display:none}
-  .tbtn{padding:0 10px}
   header.top{gap:8px}
   .verchip{display:none}
   .searchbox{min-width:140px}
@@ -415,7 +421,8 @@ body:not(.light) .rchip{color:#E9D3A0}
   <div class="dd" id="dlWrap" style="display:none">
     <button type="button" class="btn pri" id="dlBtn" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-dl"/></svg><span data-i18n="download">下载结果</span><svg class="i"><use href="#i-down"/></svg></button>
     <div class="menu" id="dlMenu" role="menu">
-      <button type="button" data-act="dlzip">两份一起下载（打包 zip）</button>
+      <button type="button" data-act="dlzip">三份一起下载（打包 zip）</button>
+      <button type="button" data-act="dlorig">原装文件（只改名）</button>
       <button type="button" data-act="dlbad">只下载「有问题」</button>
       <button type="button" data-act="dlclean">只下载「干净·可上传」</button>
     </div>
@@ -443,6 +450,7 @@ body:not(.light) .rchip{color:#E9D3A0}
         <svg class="i" style="color:var(--muted)"><use href="#i-file"/></svg>
         <label class="sr" for="fileSel">当前文件</label>
         <select id="fileSel"></select>
+        <button type="button" class="hchip" id="hBtn" data-act="overseas" title="国内 / 海外：海外的文件名会加（H），点一下切换"></button>
         <button type="button" class="addfile" id="addMore" aria-label="再加文件" title="再加文件"><svg class="i"><use href="#i-plus"/></svg></button>
       </div>
       <div class="prog"><span data-i18n="reviewed">已复核</span><div class="bar"><i id="revBar" style="width:0"></i></div><b id="revText">0 / 0</b></div>
@@ -771,11 +779,31 @@ function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp
 function cellText(v){ if(v==null)return ''; if(typeof v==='object'){ if(v.richText)return v.richText.map(function(t){return t.text;}).join(''); if(v.text!=null)return String(v.text); if(v.result!=null)return String(v.result); if(v instanceof Date)return v.getFullYear()+'-'+(v.getMonth()+1)+'-'+v.getDate(); return ''; } return String(v); }
 function wsTo2D(ws){ var data=[],maxC=ws.columnCount||0; for(var r=1;r<=ws.rowCount;r++){ var row=ws.getRow(r),arr=[]; for(var c=1;c<=maxC;c++)arr.push(cellText(row.getCell(c).value)); data.push(arr);} return data; }
 function pickSheet(wb){ var ws=wb.getWorksheet('命名'); if(ws)return ws; for(var i=0;i<wb.worksheets.length;i++){ var w=wb.worksheets[i],d=wsTo2D(w); for(var rr=0;rr<Math.min(d.length,20);rr++){ var row=d[rr].map(function(x){return String(x).trim();}); if(row.indexOf('新名')>=0&&row.indexOf('新名拼音')>=0)return w; } } return wb.worksheets[0]; }
+// 下载的文件名：技术单 制表日期（名正言顺）（H）……  H = 海外，看原文件名有没有 H，可在文件卡片上手动切换
+function pad2(n){ return (n<10?'0':'')+n; }
+function ymd(y,m,d){ return y+'-'+pad2(+m)+'-'+pad2(+d); }
+function asDate(t){ t=String(t==null?'':t).trim(); var m;
+  if(/^\d{5}(\.\d+)?$/.test(t)){ var d=new Date(Date.UTC(1899,11,30)+Math.floor(+t)*864e5); return ymd(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate()); }
+  if((m=t.match(/(\d{4})\s*[-\/.年]\s*(\d{1,2})\s*[-\/.月]\s*(\d{1,2})/)))return ymd(m[1],m[2],m[3]);
+  return ''; }
+function tableDateOf(data,fname){
+  for(var r=data.length-1;r>=0;r--){ var row=data[r]||[]; for(var c=0;c<row.length;c++){ var t=String(row[c]==null?'':row[c]).trim(); if(t.indexOf('制表时间')!==0)continue;
+    var d=asDate(t.replace(/^制表时间\s*[：:]?/,'')); for(var k=c+1;!d&&k<row.length;k++){ if(String(row[k]==null?'':row[k]).trim())d=asDate(row[k]); } if(d)return d; } }
+  return asDate(fname)||dateStr(); }
+function isOverseasName(n){ var b=String(n).replace(/\.(xlsx|xls)$/i,''); return /[（(]\s*H\s*[）)]|(^|[^A-Za-z])H([^A-Za-z]|$)|海外/.test(b); }
+function techBase(x){ return '技术单 '+x.tableDate+'（名正言顺）'+(x.overseas?'（H）':''); }
+function problemCount(x){ return x.audit.results.filter(function(r){return r.problem;}).length; }
+function outName(x,kind){ var b=techBase(x);
+  if(kind==='orig')return b+((x.name.match(/\.(xlsx|xls)$/i)||['.xlsx'])[0].toLowerCase());
+  if(kind==='bad')return '（有问题）'+b+'（'+problemCount(x)+'）.xlsx';
+  return b+'（上传）.xlsx'; }
+
 async function loadWithBuffers(fileList){ var start=parsedFiles.length;
   for(var i=0;i<fileList.length;i++){ var f=fileList[i]; if(!/\.xlsx?$/i.test(f.name)){ toast('「'+f.name+'」不是 Excel，略过'); continue; } var buf=await f.arrayBuffer();
   try{ var wb=new ExcelJS.Workbook(); await wb.xlsx.load(buf.slice(0)); var ws=pickSheet(wb); var data=wsTo2D(ws); var parsed=parseFile(data);
     if(!parsed){ alert('「'+f.name+'」找不到表头（需有「新名」「新名拼音」），略过。'); continue; }
-    parsedFiles.push({name:f.name, sheetName:ws.name, parsed:parsed, _buf:buf});
+    var om=load('mzys_overseas',{});
+    parsedFiles.push({name:f.name, sheetName:ws.name, parsed:parsed, _buf:buf, tableDate:tableDateOf(data,f.name), overseas:(f.name in om)?!!om[f.name]:isOverseasName(f.name)});
   }catch(e){ alert('读「'+f.name+'」出错：'+e.message); } }
   if(parsedFiles.length>start){ activeFile=start; curSid=null; queueFilter='all'; }
   rebuild(); }
@@ -870,6 +898,7 @@ function renderToolState(){ var x=parsedFiles[activeFile]; var n=x?refsOf(x).pen
   rb.title=n?('有 '+n+' 个编号要人手查名字'):'编号核对：备注提到的订单号 / 会员编号';
   var ns=soundList().length, sb=document.getElementById('soundBtn'); sb.classList.toggle('hot',ns>0); document.getElementById('soundBadge').textContent=ns?String(ns):'';
   sb.title=ns?('有 '+ns+' 个新名读起来不好听，点开给客服'):'发音清单：读起来不好听的新名，给客服';
+  var hb=document.getElementById('hBtn'); hb.textContent=x&&x.overseas?'海外（H）':'国内'; hb.classList.toggle('on',!!(x&&x.overseas));
   document.getElementById('undoBtn').disabled=!undoStack.length; document.getElementById('redoBtn').disabled=!redoStack.length; }
 function renderAll(){ if(!parsedFiles.length)return; var vis=visibleList();
   if(!vis.some(function(r){return String(r.sid)===String(curSid);}))curSid=vis.length?String(vis[0].sid):null;
@@ -1115,6 +1144,20 @@ function outReason(r){ var out=[];
   var seen={}; out=out.filter(function(t){ if(seen[t])return false; seen[t]=1; return true; });
   return out.length?out.join('；'):'人工判定有问题'; }
 
+// 「干净·可上传」那份：上传系统要的精简表（一个新名一行，9 栏）
+var UPLOAD_COLS=[['订单',['订单编号'],16.28],['服务中心编号',['服务中心编号'],18.14],['新名字姓氏',['新名字姓氏'],15.28],['姓名',['使用人姓名'],32.5],['性别',['性别'],6.72],
+  ['出生日期',['公历生日','出生日期','生日'],16.72],['生肖',['生肖'],6.72],['新名字',['新名'],9.58],['新名字拼音',['新名拼音'],15.28]];
+async function buildCleanWorkbook(x){ var au=x.audit, data=x.parsed.data, hd=au.header.map(function(h){return String(h).trim();});
+  var src=UPLOAD_COLS.map(function(c){ for(var i=0;i<c[1].length;i++){ var k=hd.indexOf(c[1][i]); if(k>=0)return k; } return -1; });
+  var wb=new ExcelJS.Workbook(), ws=wb.addWorksheet('命名');
+  var thin={style:'thin'}, box={top:thin,left:thin,bottom:thin,right:thin}, mid={horizontal:'center',vertical:'middle',wrapText:true};
+  UPLOAD_COLS.forEach(function(c,i){ ws.getColumn(i+1).width=c[2]; });
+  function put(vals,font){ var row=ws.addRow(vals); for(var i=1;i<=UPLOAD_COLS.length;i++){ var cell=row.getCell(i); cell.font=font; cell.alignment=mid; cell.border=box; } return row; }
+  put(UPLOAD_COLS.map(function(c){return c[0];}),{name:'宋体',size:14,bold:true}).height=17.4;
+  au.results.forEach(function(r){ if(r.problem)return; r.rows.forEach(function(rw){ var line=data[rw.row]||[];
+    put(src.map(function(k){ return k<0?'':String(line[k]==null?'':line[k]).trim(); }),{name:'宋体',size:11}); }); });
+  return wb; }
+
 async function buildSplitWorkbook(x, keepProblem){ var wb=new ExcelJS.Workbook(); await wb.xlsx.load(x._buf.slice(0));
   var ws=wb.getWorksheet(x.sheetName)||wb.worksheets[0]; var au=x.audit, hr=au.hr;
   var lastCol=0, reasonByRow={}, delRows=[]; au.header.forEach(function(h,i){ if(String(h).trim())lastCol=i+1; });
@@ -1134,12 +1177,16 @@ async function buildSplitWorkbook(x, keepProblem){ var wb=new ExcelJS.Workbook()
   return wb; }
 function dateStr(){ var d=new Date(); function p(n){return(n<10?'0':'')+n;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
 function dl(blob,name){ var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); }
-async function downloadSplit(keepProblem){ if(!parsedFiles.length)return; var x=parsedFiles[activeFile]; var wb=await buildSplitWorkbook(x,keepProblem); var base=x.name.replace(/\.(xlsx|xls)$/i,''); dl(new Blob([await wb.xlsx.writeBuffer()]),(keepProblem?'（有问题）':'（干净·可上传）')+base+'.xlsx'); }
-async function downloadZip(){ if(!parsedFiles.length||typeof JSZip==='undefined'){ alert('打包需要 JSZip，请确认网络。'); return; } var x=parsedFiles[activeFile]; var base=x.name.replace(/\.(xlsx|xls)$/i,'');
-  var zip=new JSZip(); var folder=zip.folder(base+'（拆分 '+dateStr()+'）');
-  folder.file('（有问题）'+base+'.xlsx', await (await buildSplitWorkbook(x,true)).xlsx.writeBuffer());
-  folder.file(base+'.xlsx', await (await buildSplitWorkbook(x,false)).xlsx.writeBuffer());
-  dl(await zip.generateAsync({type:'blob'}), base+'（拆分 '+dateStr()+'）.zip'); }
+async function downloadSplit(keepProblem){ if(!parsedFiles.length)return; var x=parsedFiles[activeFile];
+  if(keepProblem&&!problemCount(x)){ toast('这份没有「有问题」的学员'); return; }
+  var wb=keepProblem?await buildSplitWorkbook(x,true):await buildCleanWorkbook(x); dl(new Blob([await wb.xlsx.writeBuffer()]),outName(x,keepProblem?'bad':'clean')); }
+function downloadOrig(){ if(!parsedFiles.length)return; var x=parsedFiles[activeFile]; dl(new Blob([x._buf.slice(0)]),outName(x,'orig')); }
+async function downloadZip(){ if(!parsedFiles.length||typeof JSZip==='undefined'){ alert('打包需要 JSZip，请确认网络。'); return; } var x=parsedFiles[activeFile]; var base=techBase(x);
+  var zip=new JSZip(); var folder=zip.folder(base);
+  folder.file(outName(x,'orig'), x._buf.slice(0));
+  if(problemCount(x))folder.file(outName(x,'bad'), await (await buildSplitWorkbook(x,true)).xlsx.writeBuffer());
+  folder.file(outName(x,'clean'), await (await buildCleanWorkbook(x)).xlsx.writeBuffer());
+  dl(await zip.generateAsync({type:'blob'}), base+'.zip'); }
 function exportCSV(){ if(!parsedFiles.length)return; var x=parsedFiles[activeFile]; var lines=['订单号,序号,使用人,新名,原因'];
   x.audit.results.filter(function(r){return r.problem;}).forEach(function(r){ var reasons=r.rows.map(function(rw){return rw.msgs.join('；');}).filter(Boolean).join(' / ');
     lines.push('"'+(r.order||'')+'","'+r.sid+'","'+(r.disp||'')+'","'+r.rows.map(function(rw){return rw.neu;}).join('/')+'","'+reasons.replace(/"/g,'""')+'"'); });
@@ -1231,10 +1278,15 @@ function applySettings(){ document.querySelectorAll('#toggles input').forEach(fu
 
 /*==== info: 使用说明 / 审核规则 / 版本更新 ====*/
 var CHANGELOG=[
-  {date:'2026-10-28', title:'「有问题」那份改成回传格式', items:[
+  {date:'2026-10-28', title:'「有问题」那份改成回传格式 + 下载文件统一命名', items:[
+    '下载的文件统一命名：技术单 制表日期（名正言顺）（H）；（上传）= 审核过可上传的，（有问题）……（数目）= 里面有几位学员有问题',
+    '新增「原装文件（只改名）」：内容不动，只换成统一的名字；打包 zip 里三份都有',
+    '「干净·可上传」改成上传用的精简表：订单、服务中心编号、新名字姓氏、姓名、性别、出生日期、生肖、新名字、新名字拼音，一个新名一行',
+    '海外 / 国内：原文件名有 H 就算海外（加（H）），左边文件卡片上可以手动切换',
     '原因写在最后一栏右边，一句话说清楚，例如：新下来的名字（王科杰）跟妈妈新下来的名字（卢和洁）撞同音字（杰 jié，洁 jié）',
     '黄底红字、合并 8 格，同一位学员两行都写；不再加标题栏和「最终判定」栏，名字格不再涂色',
-    '删掉没问题的行后，表尾「审核人 / 制表时间 / 回传时间」的合并格不会再错位']},
+    '删掉没问题的行后，表尾「审核人 / 制表时间 / 回传时间」的合并格不会再错位',
+    '修顶栏跑位：屏幕不够宽时工具按钮只留图标，「下载结果」不再掉到第二行；下拉菜单不会跑出屏幕']},
   {date:'2026-10-21', title:'不雅谐音改成放行 + 发音清单', items:[
     '新名连姓念起来不好听（不雅谐音）不再卡上传，改成「参考」提示',
     '顶栏新增「发音清单」：列出读起来不好听的新名（含粤语谐音），可一键复制给客服或下载 CSV']},
@@ -1295,7 +1347,12 @@ function openHelp(tab){
 /*==== small helpers ====*/
 var _tt=null; function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(_tt); _tt=setTimeout(function(){ t.classList.remove('on'); },1800); }
 function closeMenus(){ document.querySelectorAll('.menu.open').forEach(function(m){ m.classList.remove('open'); }); ['moreBtn','dlBtn'].forEach(function(id){ var b=document.getElementById(id); if(b)b.setAttribute('aria-expanded','false'); }); }
-function toggleMenu(btnId,menuId){ var m=document.getElementById(menuId); var open=!m.classList.contains('open'); closeMenus(); if(open){ m.classList.add('open'); document.getElementById(btnId).setAttribute('aria-expanded','true'); var f=m.querySelector('button'); if(f)f.focus(); } }
+// 顶栏窄的时候会换行，按钮可能落在最左边：菜单默认往左展开，放不下就改往右展开，不让它跑出屏幕
+function placeMenu(m){ m.style.left=''; m.style.right=''; m.style.minWidth=''; var vw=document.documentElement.clientWidth;
+  if(vw<256)m.style.minWidth=(vw-16)+'px'; var r=m.getBoundingClientRect();
+  if(r.left<8){ m.style.right='auto'; m.style.left='0'; r=m.getBoundingClientRect(); if(r.right>vw-8)m.style.left=(vw-8-r.right)+'px'; } }
+function toggleMenu(btnId,menuId){ var m=document.getElementById(menuId); var open=!m.classList.contains('open'); closeMenus(); if(open){ m.classList.add('open'); placeMenu(m); document.getElementById(btnId).setAttribute('aria-expanded','true'); var f=m.querySelector('button'); if(f)f.focus(); } }
+window.addEventListener('resize',function(){ document.querySelectorAll('.menu.open').forEach(placeMenu); });
 function anyModalOpen(){ return ['modal','setModal','help'].some(function(id){ return document.getElementById(id).style.display==='flex'; }); }
 function closeModals(){ if(document.getElementById('help').style.display==='flex')store('mzys_seen2',1); ['modal','setModal','help'].forEach(function(id){ document.getElementById(id).style.display='none'; }); }
 
@@ -1323,6 +1380,8 @@ function runAct(a){ var x=parsedFiles[activeFile];
     case 'help': openHelp('guide'); break;
     case 'changelog': openHelp('log'); break;
     case 'dlzip': downloadZip(); break;
+    case 'dlorig': downloadOrig(); break;
+    case 'overseas': if(x){ x.overseas=!x.overseas; var om=load('mzys_overseas',{}); om[x.name]=x.overseas; store('mzys_overseas',om); renderToolState(); toast(x.overseas?'这份算海外，文件名会加（H）':'这份算国内，文件名不加（H）'); } break;
     case 'dlbad': downloadSplit(true); break;
     case 'dlclean': downloadSplit(false); break;
   } }
@@ -1331,6 +1390,7 @@ function runAct(a){ var x=parsedFiles[activeFile];
 var fi=document.getElementById('fileInput');
 document.getElementById('pickBtn').onclick=function(){ fi.click(); };
 document.getElementById('addMore').onclick=function(){ fi.click(); };
+document.getElementById('hBtn').onclick=function(){ runAct('overseas'); };
 fi.onchange=async function(){ await loadWithBuffers(fi.files); fi.value=''; };
 document.getElementById('drop').onclick=function(ev){ if(ev.target.closest('button'))return; fi.click(); };
 function hasFiles(e){ try{ return Array.prototype.indexOf.call(e.dataTransfer.types||[],'Files')>=0; }catch(_){ return false; } }
