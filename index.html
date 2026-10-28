@@ -540,6 +540,8 @@ function stripRel(t){ if(REL_FULL[t])return ''; var arr=Array.from(t);
   return t; }
 // 只是称呼、不是人名的词（例如「爱人：利有通」里的「爱人」），不能拿去比对撞字撞音
 var REL_WORDS={}; '爱人 配偶 伴侣 前任 现任 前夫 前妻 丈夫 妻子 老公 老婆 先生 太太 对象 公公 婆婆 岳父 岳母 继父 继母 继子 继女'.split(' ').forEach(function(w){REL_WORDS[w]=1;});
+// 「不详 / 不清楚 / 不知道」这类是说不知道名字，不是人名
+var NO_NAME_RE=/不详|不祥|不清楚|不知道|不晓得|未知|不记得|记不得|忘记|忘了|暂无|没有|保密|待定|未定|未取|没取|不明/;
 function splitNames(text){ var t=String(text==null?'':text); if(NULLS[t.trim()])return [];
   var extra=[];
   // 括号里若写了「名正言顺：某某」「改名 某某」「新名 某某」，那是家人真正下来的新名，要抓出来比对
@@ -550,7 +552,7 @@ function splitNames(text){ var t=String(text==null?'':text); if(NULLS[t.trim()])
   t=t.replace(/[\uff08(][^\uff09)]*[\uff09)]/g,'');
   for(var i=0;i<NOISE.length;i++)t=t.split(NOISE[i]).join('');
   var parts=t.split(/[@\uff0c,\u3001\uff1b;\uff1a:\u3000\s\/]+/).concat(extra),out=[];
-  for(var j=0;j<parts.length;j++){var c=cjkOnly(parts[j]);if(!c||NULLS[c])continue; c=stripRel(c); if(c&&!NULLS[c]&&!REL_WORDS[c]&&Array.from(c).length>=2&&out.indexOf(c)<0)out.push(c);} return out; }
+  for(var j=0;j<parts.length;j++){var c=cjkOnly(parts[j]);if(!c||NULLS[c])continue; c=stripRel(c); if(c&&!NULLS[c]&&!REL_WORDS[c]&&!NO_NAME_RE.test(c)&&Array.from(c).length>=2&&out.indexOf(c)<0)out.push(c);} return out; }
 function familyMembers(row, cols){ var out=[];
   splitNames(row[cols.father]).forEach(function(n){out.push(['父亲',n]);});
   splitNames(row[cols.mother]).forEach(function(n){out.push(['母亲',n]);});
@@ -1296,6 +1298,7 @@ var CHANGELOG=[
   {date:'2026-10-28', title:'「有问题」那份改成回传格式 + 下载文件统一命名', items:[
     '一家人改看文件颜色：涂同一颜色的学员算一家人，新名互相比对；拿掉靠猜的「疑似同一家人」',
     '「爱人 / 配偶 / 前夫 / 现任」等称呼不再被当成家人名字去比对',
+    '「不详 / 不清楚 / 不知道 / 未知」不再被当成家人名字（之前会拿去比对撞音）',
     '下载的文件统一命名：技术单 制表日期（名正言顺）（H）；（上传）= 审核过可上传的，（有问题）……（数目）= 里面有几位学员有问题',
     '新增「原装文件（只改名）」：内容不动，只换成统一的名字；打包 zip 里三份都有',
     '「干净·可上传」改成上传用的精简表：订单、服务中心编号、新名字姓氏、姓名、性别、出生日期、生肖、新名字、新名字拼音，一个新名一行',
